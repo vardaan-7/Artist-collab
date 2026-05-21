@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artist Collab - Portal</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #121214; color: #e1e1e6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #202024; padding: 2.5rem; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); width: 350px; text-align: center; }
+        input, select, button { width: 100%; padding: 0.8rem; margin: 0.5rem 0; border-radius: 4px; border: 1px solid #323238; background: #121214; color: white; box-sizing: border-box; }
+        button { background: #04d361; color: #000; font-weight: bold; border: none; cursor: pointer; margin-top: 1rem; }
+        button:hover { background: #02b852; }
+        .hidden { display: none; }
+        .link { color: #8257e5; cursor: pointer; text-decoration: underline; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-card" class="card">
+        <h2 id="form-title">Artist Login</h2>
+        
+        <form id="auth-form">
+            <input type="text" id="artist_name" class="reg-field hidden" placeholder="Artist Name">
+            <select id="role_type" class="reg-field hidden">
+                <option value="producer">Producer</option>
+                <option value="vocalist">Vocalist</option>
+                <option value="designer">Digital Artist</option>
+            </select>
+            
+            <input type="email" id="email" placeholder="Email Address" required>
+            <input type="password" id="password" placeholder="Password" required>
+            
+            <button type="submit" id="submit-btn">Let's Go</button>
+        </form>
+        <p style="margin-top: 1rem;"><span id="toggle-form" class="link">Create an account instead</span></p>
+    </div>
+
+    <div id="dashboard-card" class="card hidden">
+        <h2>Welcome Back, <span id="user-display-name" style="color: #04d361;">Artist</span>!</h2>
+        <p style="color: #a8a8b3;">You are securely authenticated using a JWT session token.</p>
+        <div style="background: #121214; padding: 1rem; border-radius: 4px; text-align: left; font-family: monospace; font-size: 0.85rem; word-break: break-all;">
+            <strong>Your Bio:</strong> <span id="user-bio"></span><br>
+            <strong>Role:</strong> <span id="user-role"></span>
+        </div>
+        <button onclick="logout()" style="background: #e1e1e6; color: #121214;">Log Out</button>
+    </div>
+
+    <script>
+        let isLogin = true;
+        const apiBase = "http://127.0.0.1:8000/api/v1";
+
+        // Toggle between Login and Register views
+        document.getElementById('toggle-form').addEventListener('click', () => {
+            isLogin = !isLogin;
+            document.getElementById('form-title').innerText = isLogin ? "Artist Login" : "Register Account";
+            document.getElementById('toggle-form').innerText = isLogin ? "Create an account instead" : "Already have an account? Login";
+            document.querySelectorAll('.reg-field').forEach(el => el.classList.toggle('hidden', isLogin));
+        });
+
+        // Form submission handling
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (isLogin) {
+                // OAuth2 standard Form Data request
+                const formData = new URLSearchParams();
+                formData.append('username', document.getElementById('email').value);
+                formData.append('password', document.getElementById('password').value);
+
+                const response = await fetch(`${apiBase}/auth/login`, { method: 'POST', body: formData });
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('token', data.access_token); // Save token safely in browser
+                    loadDashboard();
+                } else { alert("Login failed. Check your credentials."); }
+            } else {
+                // Register JSON Request
+                const payload = {
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('password').value,
+                    artist_name: document.getElementById('artist_name').value,
+                    role_type: document.getElementById('role_type').value,
+                    tenant_id: "tenant_default",
+                    bio: "Hey there! I am a creative collaborator."
+                };
+                const response = await fetch(`${apiBase}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (response.ok) { alert("Registration successful! Now login."); location.reload(); } 
+                else { alert("Registration failed."); }
+            }
+        });
+
+        // Load dashboard using the secure JWT Token
+        async function loadDashboard() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            const response = await fetch(`${apiBase}/auth/me`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` } // Inject token into header!
+            });
+
+            if (response.ok) {
+                const user = await response.json();
+                document.getElementById('user-display-name').innerText = user.artist_name;
+                document.getElementById('user-bio').innerText = user.bio || 'No bio added yet.';
+                document.getElementById('user-role').innerText = user.role_type;
+                
+                document.getElementById('auth-card').classList.add('hidden');
+                document.getElementById('dashboard-card').classList.remove('hidden');
+            } else { logout(); }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            location.reload();
+        }
+
+        // Auto-load if token exists
+        if(localStorage.getItem('token')) { loadDashboard(); }
+    </script>
+</body>
+</html>
