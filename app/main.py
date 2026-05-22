@@ -7,9 +7,10 @@ from fastapi.responses import FileResponse
 from app.core.config import settings
 from app.core.database import engine, Base
 from app.routers import auth
+from app.models.collab import CollabRequest
+from app.routers import auth, marketplace
 
 # Instruct SQLAlchemy to auto-create our tables if they don't exist yet
-# When the server starts, this reads app/models/user.py and builds the table in Docker Postgres
 Base.metadata.create_all(bind=engine)
 
 # Initialize the FastAPI Core Application Instance
@@ -31,8 +32,9 @@ app.add_middleware(
 )
 
 # Register Application Architectural Domain Routers
-# This plugs our /auth/register route directly into the main running server instance
+# This plugs our route directly into the main running server instance
 app.include_router(auth.router, prefix=settings.API_V1_STR)
+app.include_router(marketplace.router, prefix=settings.API_V1_STR)
 
 #Mount the static directory to serve assets, CSS, or JS files
 app.mount("/static", StaticFiles(directory="static"), name="static")
