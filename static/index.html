@@ -4,45 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Artist Collab - Portal</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #121214; color: #e1e1e6; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; margin: 0; padding: 2rem; box-sizing: border-box; }
-        .container { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 1250px; gap: 2rem; }
-        .card { background: #202024; padding: 2.5rem; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); width: 100%; max-width: 400px; text-align: center; box-sizing: border-box; }
-        
-        /* Master Layout Grid: Sidebar profiles + Wide Workspace area */
-        .dashboard-layout { display: grid; grid-template-columns: 1fr; gap: 2rem; width: 100%; }
-        @media (min-width: 992px) { .dashboard-layout { grid-template-columns: 300px 1fr; } }
-        
-        /* Twin Columns Layout inside the Workspace */
-        .workspace-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; width: 100%; }
-        @media (min-width: 768px) { .workspace-grid { grid-template-columns: 1fr 1fr; } }
-
-        input, select, button, textarea { width: 100%; padding: 0.8rem; margin: 0.5rem 0; border-radius: 4px; border: 1px solid #323238; background: #121214; color: white; box-sizing: border-box; }
-        button { background: #04d361; color: #000; font-weight: bold; border: none; cursor: pointer; margin-top: 1rem; }
-        button:hover { background: #02b852; }
-        .hidden { display: none !important; }
-        .link { color: #8257e5; cursor: pointer; text-decoration: underline; font-size: 0.9rem; }
-        
-        /* Panels */
-        .panel-box { background: #202024; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); width: 100%; box-sizing: border-box; }
-        .filter-bar { display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: center; }
-        .filter-bar select { margin: 0; max-width: 200px; }
-        
-        /* In-box Content Cards */
-        .artist-grid, .requests-stack { display: flex; flex-direction: column; gap: 1rem; }
-        .artist-card, .request-card { background: #121214; border: 1px solid #323238; padding: 1.2rem; border-radius: 6px; display: flex; flex-direction: column; justify-content: space-between; text-align: left; }
-        .artist-role { background: #8257e5; color: white; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; display: inline-block; width: max-content; margin-top: 0.3rem; }
-        .artist-bio, .request-msg { color: #a8a8b3; font-size: 0.9rem; margin: 0.8rem 0; line-height: 1.4; }
-        
-        .connect-btn { background: #8257e5; color: white; font-size: 0.85rem; padding: 0.5rem; margin: 0; }
-        .connect-btn:hover { background: #6f42c1; }
-
-        /* Action Buttons for Request Inbox */
-        .btn-group { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
-        .accept-btn { background: #04d361; color: black; margin: 0; padding: 0.45rem; font-size: 0.8rem; }
-        .decline-btn { background: #f75a68; color: white; margin: 0; padding: 0.45rem; font-size: 0.8rem; }
-        .decline-btn:hover { background: #c53030; }
-    </style>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
@@ -67,7 +29,6 @@
 
         <!-- PROTECTED FULL-STACK DASHBOARD LAYOUT -->
         <div id="main-dashboard" class="dashboard-layout hidden">
-            
             <!-- LEFT PANEL: USER INDENTITY SIDEBAR -->
             <div class="card" style="max-width: 100%; height: max-content;">
                 <h2>Welcome Back, <span id="user-display-name" style="color: #04d361;">Artist</span>!</h2>
@@ -79,14 +40,12 @@
                 <button onclick="logout()" style="background: #e1e1e6; color: #121214; margin: 0;">Log Out</button>
             </div>
 
-            <!-- RIGHT WORKSPACE AREA: DUAL COUMNS -->
+            <!-- RIGHT WORKSPACE AREA: DUAL COLUMNS -->
             <div class="workspace-grid">
-                
                 <!-- COLUMN 1: DISCOVERY MARKETPLACE -->
                 <div class="panel-box">
                     <h2 style="margin-top: 0; color: #04d361;">Discover Talent</h2>
                     <p style="color: #a8a8b3; font-size:0.9rem; margin-bottom: 1.5rem;">Find creators in your layer.</p>
-                    
                     <div class="filter-bar">
                         <select id="role-filter" onchange="fetchMarketplace()">
                             <option value="">All Creators</option>
@@ -95,199 +54,19 @@
                             <option value="designer">Digital Artists</option>
                         </select>
                     </div>
-
-                    <div id="artist-grid" class="artist-grid">
-                        <!-- Marketplace cards injected here -->
-                    </div>
+                    <div id="artist-grid" class="artist-grid"></div>
                 </div>
 
                 <!-- COLUMN 2: CONNECTION REQUESTS INBOX -->
                 <div class="panel-box">
                     <h2 style="margin-top: 0; color: #8257e5;">Incoming Requests</h2>
                     <p style="color: #a8a8b3; font-size:0.9rem; margin-bottom: 1.5rem;">Collaboration offers targeting you.</p>
-                    
-                    <div id="requests-inbox" class="requests-stack">
-                        <!-- Requests loop target -->
-                    </div>
+                    <div id="requests-inbox" class="requests-stack"></div>
                 </div>
-
             </div>
-
         </div>
     </div>
 
-    <script>
-        let isLogin = true;
-        const apiBase = "http://127.0.0.1:8000/api/v1";
-
-        document.getElementById('toggle-form').addEventListener('click', () => {
-            isLogin = !isLogin;
-            document.getElementById('form-title').innerText = isLogin ? "Artist Login" : "Register Account";
-            document.getElementById('toggle-form').innerText = isLogin ? "Create an account instead" : "Already have an account? Login";
-            document.querySelectorAll('.reg-field').forEach(el => el.classList.toggle('hidden', isLogin));
-        });
-
-        document.getElementById('auth-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (isLogin) {
-                const formData = new URLSearchParams();
-                formData.append('username', document.getElementById('email').value);
-                formData.append('password', document.getElementById('password').value);
-
-                const response = await fetch(`${apiBase}/auth/login`, { method: 'POST', body: formData });
-                if (response.ok) {
-                    const data = await response.json();
-                    localStorage.setItem('token', data.access_token);
-                    loadDashboard();
-                } else { alert("Login failed. Check credentials."); }
-            } else {
-                const payload = {
-                    email: document.getElementById('email').value,
-                    password: document.getElementById('password').value,
-                    artist_name: document.getElementById('artist_name').value,
-                    role_type: document.getElementById('role_type').value,
-                    tenant_id: document.getElementById('tenant_id').value || "tenant_default",
-                    bio: "Hey there! Ready to jump onto some massive collaborative project tracks."
-                };
-                const response = await fetch(`${apiBase}/auth/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (response.ok) { alert("Registration complete! Go ahead and log in."); location.reload(); } 
-                else { alert("Registration failed."); }
-            }
-        });
-
-        async function loadDashboard() {
-            const token = localStorage.getItem('token');
-            if (!token) return;
-
-            const response = await fetch(`${apiBase}/auth/me`, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.ok) {
-                const user = await response.json();
-                document.getElementById('user-display-name').innerText = user.artist_name;
-                document.getElementById('user-bio').innerText = user.bio || 'No bio added yet.';
-                document.getElementById('user-role').innerText = user.role_type;
-                document.getElementById('user-tenant').innerText = user.tenant_id;
-                
-                document.getElementById('auth-card').classList.add('hidden');
-                document.getElementById('main-dashboard').classList.remove('hidden');
-                
-                // Track both async feeds simultaneously 
-                fetchMarketplace();
-                fetchIncomingRequests();
-            } else { logout(); }
-        }
-
-        async function fetchMarketplace() {
-            const token = localStorage.getItem('token');
-            const selectedRole = document.getElementById('role-filter').value;
-            
-            let url = `${apiBase}/marketplace/artists`;
-            if (selectedRole) { url += `?role_type=${selectedRole}`; }
-
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.ok) {
-                const artists = await response.json();
-                const grid = document.getElementById('artist-grid');
-                grid.innerHTML = '';
-                
-                if (artists.length === 0) {
-                    grid.innerHTML = `<p style="color: #a8a8b3;">No other artists found in your workspace tier.</p>`;
-                    return;
-                }
-
-                artists.forEach(artist => {
-                    const el = document.createElement('div');
-                    el.className = 'artist-card';
-                    el.innerHTML = `
-                        <div>
-                            <strong style="font-size: 1.1rem; color: #fff;">${artist.artist_name}</strong><br>
-                            <span class="artist-role">${artist.role_type.toUpperCase()}</span>
-                            <div class="artist-bio">${artist.bio || 'No bio set.'}</div>
-                        </div>
-                        <button class="connect-btn" onclick="sendConnectRequest(${artist.id})">Connect Handshake</button>
-                    `;
-                    grid.appendChild(el);
-                });
-            }
-        }
-
-        async function fetchIncomingRequests() {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${apiBase}/marketplace/requests/incoming`, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.ok) {
-                const requests = await response.json();
-                const inbox = document.getElementById('requests-inbox');
-                inbox.innerHTML = '';
-
-                if (requests.length === 0) {
-                    inbox.innerHTML = `<p style="color: #a8a8b3;">Your inbox is empty. No pending handshakes.</p>`;
-                    return;
-                }
-
-                requests.forEach(req => {
-                    const el = document.createElement('div');
-                    el.className = 'request-card';
-                    el.innerHTML = `
-                        <div>
-                            <strong style="color: #8257e5;">Request from User ID: ${req.sender_id}</strong>
-                            <div class="request-msg" style="background: #202024; padding: 0.6rem; border-radius: 4px; margin-top: 0.5rem; font-style: italic;">
-                                "${req.message}"
-                            </div>
-                        </div>
-                        <div class="btn-group">
-                            <button class="accept-btn" onclick="alert('Accept logic coming soon!')">Accept</button>
-                            <button class="decline-btn" onclick="alert('Decline logic coming soon!')">Decline</button>
-                        </div>
-                    `;
-                    inbox.appendChild(el);
-                });
-            }
-        }
-
-        async function sendConnectRequest(receiverId) {
-            const token = localStorage.getItem('token');
-            const userMsg = prompt("Enter a brief connection handshake introduction message:", "Hey, let's collaborate!");
-            if (userMsg === null) return;
-
-            const response = await fetch(`${apiBase}/marketplace/connect`, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ receiver_id: receiverId, message: userMsg })
-            });
-
-            if (response.ok) {
-                alert("Collaboration connection request dispatched successfully!");
-            } else {
-                const errData = await response.json();
-                alert(`Failed to connect: ${errData.detail || 'Unknown error'}`);
-            }
-        }
-
-        function logout() {
-            localStorage.removeItem('token');
-            location.reload();
-        }
-
-        if(localStorage.getItem('token')) { loadDashboard(); }
-    </script>
+    <script src="/static/app.js"></script>
 </body>
 </html>
