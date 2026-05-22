@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.routers.deps import get_current_user
 from app.models.user import User
+from app.models.collab import CollabRequest
 from app.repositories.marketplace_repo import MarketplaceRepository
 from app.schemas.user import UserResponse
 from app.schemas.collab import CollabRequestCreate, CollabRequestResponse
@@ -60,3 +61,15 @@ def initiate_collaboration(
         message=payload.message
     )
     return new_request
+
+@router.get("/requests/incoming")
+def get_incoming_requests(
+       current_user: User = Depends(get_current_user),
+       db: Session = Depends(get_db)
+   ):
+       requests = db.query(CollabRequest).filter(
+           CollabRequest.receiver_id == current_user.id,
+           CollabRequest.status == "pending"
+       ).all()
+       
+       return requests
