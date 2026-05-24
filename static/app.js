@@ -60,8 +60,10 @@ async function loadDashboard() {
         document.getElementById('auth-card').classList.add('hidden');
         document.getElementById('main-dashboard').classList.remove('hidden');
         
+        // 🟢 Loads all 3 interactive data dashboard panels simultaneously
         fetchMarketplace();
         fetchIncomingRequests();
+        fetchActiveConnections(); 
     } else { logout(); }
 }
 
@@ -140,6 +142,40 @@ async function fetchIncomingRequests() {
     }
 }
 
+// 🟢 NEW FEATURE FEED: Fetches and displays verified accepted partners in Column 3
+async function fetchActiveConnections() {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${apiBase}/marketplace/connections`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (response.ok) {
+        const partners = await response.json();
+        const networkBox = document.getElementById('active-connections');
+        networkBox.innerHTML = '';
+
+        if (partners.length === 0) {
+            networkBox.innerHTML = `<p style="color: #a8a8b3;">No active connections verified yet.</p>`;
+            return;
+        }
+
+        partners.forEach(partner => {
+            const el = document.createElement('div');
+            el.className = 'artist-card'; 
+            el.innerHTML = `
+                <div>
+                    <strong style="font-size: 1.1rem; color: #04d361;">🤝 ${partner.artist_name}</strong><br>
+                    <span class="artist-role" style="background: #04d361; color: black; font-weight: bold;">${partner.role_type.toUpperCase()}</span>
+                    <div class="artist-bio">${partner.bio || 'Connected collaborator profile workspace.'}</div>
+                </div>
+                <button class="connect-btn" style="background:#202024; border: 1px solid #323238; color:#a8a8b3;" onclick="alert('Shared workspace coming soon!')">Open Project</button>
+            `;
+            networkBox.appendChild(el);
+        });
+    }
+}
+
 async function sendConnectRequest(receiverId) {
     const token = localStorage.getItem('token');
     const userMsg = prompt("Enter a brief connection handshake introduction message:", "Hey, let's collaborate!");
@@ -158,6 +194,7 @@ async function sendConnectRequest(receiverId) {
         alert("Collaboration connection request dispatched successfully!");
     } else {
         const errData = await response.json();
+        // Displays error if intercepted by your duplicate safety guard check!
         alert(`Failed to connect: ${errData.detail || 'Unknown error'}`);
     }
 }
@@ -174,7 +211,9 @@ async function handleRequestAction(requestId, actionType) {
 
     if (response.ok) {
         alert(`Request ${actionType} successfully!`);
+        // 🟢 Live-reloads the incoming list and your connections list simultaneously
         fetchIncomingRequests(); 
+        fetchActiveConnections();
     } else {
         const errData = await response.json();
         alert(`Failed to update request: ${errData.detail || 'Unknown error'}`);
@@ -186,5 +225,5 @@ function logout() {
     location.reload();
 }
 
-
+// Global Orchestration Launcher Execution Boundary
 if(localStorage.getItem('token')) { loadDashboard(); }

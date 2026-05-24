@@ -100,3 +100,19 @@ def respond_to_collab_request(
     )
     
     return updated_request
+
+@router.get("/connections", response_model=List[UserResponse])
+def view_active_connections(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Protected Endpoint: Fetches profiles of all artists with whom the 
+    authenticated user has established an accepted connection handshake.
+    """
+    marketplace_repo = MarketplaceRepository(db)
+    connections = marketplace_repo.get_active_connections(
+        current_user_id=current_user.id,
+        tenant_id=current_user.tenant_id
+    )
+    return connections

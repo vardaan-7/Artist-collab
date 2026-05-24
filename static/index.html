@@ -9,7 +9,6 @@
 <body>
 
     <div class="container">
-        <!-- LOGIN / REGISTER CARD -->
         <div id="auth-card" class="card">
             <h2 id="form-title">Artist Login</h2>
             <form id="auth-form">
@@ -27,9 +26,8 @@
             <p style="margin-top: 1rem;"><span id="toggle-form" class="link">Create an account instead</span></p>
         </div>
 
-        <!-- PROTECTED FULL-STACK DASHBOARD LAYOUT -->
         <div id="main-dashboard" class="dashboard-layout hidden">
-            <!-- LEFT PANEL: USER INDENTITY SIDEBAR -->
+            
             <div class="card" style="max-width: 100%; height: max-content;">
                 <h2>Welcome Back, <span id="user-display-name" style="color: #04d361;">Artist</span>!</h2>
                 <p style="color: #a8a8b3; font-size: 0.9rem;">Workspace: <span id="user-tenant" style="color: #8257e5; font-weight:bold;"></span></p>
@@ -40,9 +38,8 @@
                 <button onclick="logout()" style="background: #e1e1e6; color: #121214; margin: 0;">Log Out</button>
             </div>
 
-            <!-- RIGHT WORKSPACE AREA: DUAL COLUMNS -->
             <div class="workspace-grid">
-                <!-- COLUMN 1: DISCOVERY MARKETPLACE -->
+                
                 <div class="panel-box">
                     <h2 style="margin-top: 0; color: #04d361;">Discover Talent</h2>
                     <p style="color: #a8a8b3; font-size:0.9rem; margin-bottom: 1.5rem;">Find creators in your layer.</p>
@@ -55,18 +52,14 @@
                         </select>
                     </div>
                     <div id="artist-grid" class="artist-grid"></div>
-                </div>
-
-                <!-- COLUMN 2: CONNECTION REQUESTS INBOX -->
-                <div class="panel-box">
+                </div> <div class="panel-box">
                     <h2 style="margin-top: 0; color: #8257e5;">Incoming Requests</h2>
                     <p style="color: #a8a8b3; font-size:0.9rem; margin-bottom: 1.5rem;">Collaboration offers targeting you.</p>
                     <div id="requests-inbox" class="requests-stack"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="/static/app.js"></script>
+                </div> <div class="panel-box">
+                    <h2 style="margin-top: 0; color: #04d361;">Your Network</h2>
+                    <p style="color: #a8a8b3; font-size:0.9rem; margin-bottom: 1.5rem;">Verified creative partners in this workspace layer.</p>
+                    <div id="active-connections" class="requests-stack"></div>
+                </div> </div> </div> </div> <script src="/static/app.js"></script>
 </body>
 </html>
