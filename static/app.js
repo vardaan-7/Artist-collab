@@ -131,8 +131,8 @@ async function fetchIncomingRequests() {
                     </div>
                 </div>
                 <div class="btn-group">
-                    <button class="accept-btn" onclick="alert('Accept logic coming soon!')">Accept</button>
-                    <button class="decline-btn" onclick="alert('Decline logic coming soon!')">Decline</button>
+                    <button class="accept-btn" onclick="handleRequestAction(${req.id}, 'accepted')">Accept</button>
+                    <button class="decline-btn" onclick="handleRequestAction(${req.id}, 'declined')">Decline</button>
                 </div>
             `;
             inbox.appendChild(el);
@@ -162,9 +162,29 @@ async function sendConnectRequest(receiverId) {
     }
 }
 
+async function handleRequestAction(requestId, actionType) {
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch(`${apiBase}/marketplace/requests/${requestId}/status?action=${actionType}`, {
+        method: 'PATCH',
+        headers: { 
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (response.ok) {
+        alert(`Request ${actionType} successfully!`);
+        fetchIncomingRequests(); 
+    } else {
+        const errData = await response.json();
+        alert(`Failed to update request: ${errData.detail || 'Unknown error'}`);
+    }
+}
+
 function logout() {
     localStorage.removeItem('token');
     location.reload();
 }
+
 
 if(localStorage.getItem('token')) { loadDashboard(); }

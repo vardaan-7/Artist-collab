@@ -73,3 +73,30 @@ def get_incoming_requests(
        ).all()
        
        return requests
+
+@router.patch("/requests/{request_id}/status", response_model=CollabRequestResponse)
+def respond_to_collab_request(
+    request_id: int,
+    action: str, # Expecting either "accepted" or "declined"
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Protected Endpoint: Allows the receiving artist to accept or decline an incoming request.
+    """
+    if action not in ["accepted", "declined"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid action. Must be 'accepted' or 'declined'."
+        )
+        
+    marketplace_repo = MarketplaceRepository(db)
+    
+    # Execute the update pipeline inside our repository
+    updated_request = marketplace_repo.update_collab_request_status(
+        request_id=request_id,
+        current_user_id=current_user.id,
+        new_status=action
+    )
+    
+    return updated_request
