@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime,Float
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -19,3 +19,7 @@ class User(Base):
     
     # Audit trail time signatures (Tracks exactly when an account was created)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    # GEOSPATIAL DATA TRACKING FIELDS
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)

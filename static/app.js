@@ -1,5 +1,6 @@
 let isLogin = true;
-const apiBase = "http://127.0.0.1:8000/api/v1";
+const apiBase = "http://127.0.0.1:8000/api/v1/marketplace"; // Optimized to point directly to your router prefix
+let currentCursor = null;  // 🟢 Global state variable tracking the Base64 composite pagination token
 
 document.getElementById('toggle-form').addEventListener('click', () => {
     isLogin = !isLogin;
@@ -13,10 +14,11 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
     
     if (isLogin) {
         const formData = new URLSearchParams();
+        // Since your backend expects an OAuth2 Form login, let's keep hitting the proper auth path
         formData.append('username', document.getElementById('email').value);
         formData.append('password', document.getElementById('password').value);
 
-        const response = await fetch(`${apiBase}/auth/login`, { method: 'POST', body: formData });
+        const response = await fetch(`http://127.0.0.1:8000/api/v1/auth/login`, { method: 'POST', body: formData });
         if (response.ok) {
             const data = await response.json();
             localStorage.setItem('token', data.access_token);
@@ -31,7 +33,7 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
             tenant_id: document.getElementById('tenant_id').value || "tenant_default",
             bio: "Hey there! Ready to jump onto some massive collaborative project tracks."
         };
-        const response = await fetch(`${apiBase}/auth/register`, {
+        const response = await fetch(`http://127.0.0.1:8000/api/v1/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -45,7 +47,7 @@ async function loadDashboard() {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const response = await fetch(`${apiBase}/auth/me`, {
+    const response = await fetch(`http://127.0.0.1:8000/api/v1/auth/me`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -60,54 +62,100 @@ async function loadDashboard() {
         document.getElementById('auth-card').classList.add('hidden');
         document.getElementById('main-dashboard').classList.remove('hidden');
         
-        // 🟢 Loads all 3 interactive data dashboard panels simultaneously
-        fetchMarketplace();
+        // 🟢 Sets the initial placeholder for the search field and fires concurrent side panels
+        document.getElementById('artist-grid').innerHTML = `<p style="color: #a8a8b3;">Type an artist role above to map local talent by proximity radar.</p>`;
         fetchIncomingRequests();
         fetchActiveConnections(); 
     } else { logout(); }
 }
 
-async function fetchMarketplace() {
+// 🟢 UPGRADED DISCOVERY PIECE: Handles geospatial queries and cursor-based offsets
+async function searchProximity(isNewSearch = true) {
     const token = localStorage.getItem('token');
-    const selectedRole = document.getElementById('role-filter').value;
+    const targetRole = document.getElementById('role-search-input').value.trim();
+    const grid = document.getElementById('artist-grid');
+    const paginationBar = document.getElementById('pagination-bar');
+
+    if (!targetRole) {
+        alert("Please specify a role type to look up nearby talent!");
+        return;
+    }
+
+    // Reset global pagination parameters if starting a clean query criteria execution
+    if (isNewSearch) {
+        currentCursor = null;
+        grid.innerHTML = '<p style="color: #a8a8b3;">Scanning local workspace radar coordinates...</p>';
+    }
+
+    // Pointing directly to our advanced cursor routing engine path
+    let url = `${apiBase}/discover?role_type=${encodeURIComponent(targetRole)}&limit=10`;
     
-    let url = `${apiBase}/marketplace/artists`;
-    if (selectedRole) { url += `?role_type=${selectedRole}`; }
+    // Inject the pagination state token if executing a progressive page advancement sequence
+    if (!isNewSearch && currentCursor) {
+        url += `&cursor=${encodeURIComponent(currentCursor)}`;
+    }
 
-    const response = await fetch(url, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-
-    if (response.ok) {
-        const artists = await response.json();
-        const grid = document.getElementById('artist-grid');
-        grid.innerHTML = '';
-        
-        if (artists.length === 0) {
-            grid.innerHTML = `<p style="color: #a8a8b3;">No other artists found in your workspace tier.</p>`;
-            return;
-        }
-
-        artists.forEach(artist => {
-            const el = document.createElement('div');
-            el.className = 'artist-card';
-            el.innerHTML = `
-                <div>
-                    <strong style="font-size: 1.1rem; color: #fff;">${artist.artist_name}</strong><br>
-                    <span class="artist-role">${artist.role_type.toUpperCase()}</span>
-                    <div class="artist-bio">${artist.bio || 'No bio set.'}</div>
-                </div>
-                <button class="connect-btn" onclick="sendConnectRequest(${artist.id})">Connect Handshake</button>
-            `;
-            grid.appendChild(el);
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
         });
+
+        if (response.ok) {
+            const data = await response.json();
+            const artists = data.artists;
+            
+            // Advance state references
+            currentCursor = data.paging.next_cursor;
+            const hasMore = data.paging.has_more;
+
+            if (isNewSearch) grid.innerHTML = '';
+
+            if (artists.length === 0 && isNewSearch) {
+                grid.innerHTML = `<p style="color: #a8a8b3;">No creators matching "${targetRole}" located inside this cluster layer.</p>`;
+                paginationBar.classList.add('hidden');
+                return;
+            }
+
+            // Loop and append elements dynamically
+            artists.forEach(artist => {
+                const el = document.createElement('div');
+                el.className = 'artist-card';
+                el.innerHTML = `
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <strong style="font-size: 1.1rem; color: #fff;">${artist.artist_name}</strong>
+                            <span style="font-size: 0.8rem; color: #04d361; font-weight: bold; background: #121214; padding: 0.2rem 0.5rem; border-radius: 4px;">
+                                📍 ${artist.distance_km} km away
+                            </span>
+                        </div>
+                        <span class="artist-role">${artist.role_type.toUpperCase()}</span>
+                        <div class="artist-bio">${artist.bio || 'No bio cataloged.'}</div>
+                    </div>
+                    <button class="connect-btn" onclick="sendConnectRequest(${artist.id})">Connect Handshake</button>
+                `;
+                grid.appendChild(el);
+            });
+
+            // Toggle visual display state of the pagination controls container boundary
+            if (hasMore && currentCursor) {
+                paginationBar.classList.remove('hidden');
+            } else {
+                paginationBar.classList.add('hidden');
+            }
+
+        } else {
+            const err = await response.json();
+            grid.innerHTML = `<p style="color: #f75a68;">Spatial Scan Fault: ${err.detail || 'Failed search synchronization execution.'}</p>`;
+        }
+    } catch (error) {
+        console.error("Discovery engine routing failure:", error);
     }
 }
 
 async function fetchIncomingRequests() {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${apiBase}/marketplace/requests/incoming`, {
+    const response = await fetch(`${apiBase}/requests/incoming`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -142,10 +190,9 @@ async function fetchIncomingRequests() {
     }
 }
 
-// 🟢 NEW FEATURE FEED: Fetches and displays verified accepted partners in Column 3
 async function fetchActiveConnections() {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${apiBase}/marketplace/connections`, {
+    const response = await fetch(`${apiBase}/connections`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -181,7 +228,7 @@ async function sendConnectRequest(receiverId) {
     const userMsg = prompt("Enter a brief connection handshake introduction message:", "Hey, let's collaborate!");
     if (userMsg === null) return;
 
-    const response = await fetch(`${apiBase}/marketplace/connect`, {
+    const response = await fetch(`${apiBase}/connect`, {
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json',
@@ -194,7 +241,6 @@ async function sendConnectRequest(receiverId) {
         alert("Collaboration connection request dispatched successfully!");
     } else {
         const errData = await response.json();
-        // Displays error if intercepted by your duplicate safety guard check!
         alert(`Failed to connect: ${errData.detail || 'Unknown error'}`);
     }
 }
@@ -202,7 +248,7 @@ async function sendConnectRequest(receiverId) {
 async function handleRequestAction(requestId, actionType) {
     const token = localStorage.getItem('token');
     
-    const response = await fetch(`${apiBase}/marketplace/requests/${requestId}/status?action=${actionType}`, {
+    const response = await fetch(`${apiBase}/requests/${requestId}/status?action=${actionType}`, {
         method: 'PATCH',
         headers: { 
             'Authorization': `Bearer ${token}`
@@ -211,7 +257,6 @@ async function handleRequestAction(requestId, actionType) {
 
     if (response.ok) {
         alert(`Request ${actionType} successfully!`);
-        // 🟢 Live-reloads the incoming list and your connections list simultaneously
         fetchIncomingRequests(); 
         fetchActiveConnections();
     } else {
@@ -225,5 +270,4 @@ function logout() {
     location.reload();
 }
 
-// Global Orchestration Launcher Execution Boundary
 if(localStorage.getItem('token')) { loadDashboard(); }

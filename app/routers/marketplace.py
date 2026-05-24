@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -32,6 +32,42 @@ def browse_marketplace(
         role_type=role_type
     )
     return artists
+
+
+#COMPOSITE GEOSPATIAL PROXIMITY SEARCH ENGINE
+@router.get("/discover")
+def discover_artists_by_proximity(
+    role_type: str = Query(..., description="The type of artist you are searching for (e.g., producer)"),
+    limit: int = Query(10, ge=1, le=50, description="Number of results per page"),
+    cursor: Optional[str] = Query(None, description="The Base64 encoded composite cursor for pagination"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Protected Endpoint: Returns a Google-style paginated list of target creators 
+    sorted dynamically by physical proximity to the requesting artist.
+    """
+    # 🛡️ Safety Guard: Ensure the requesting user has spatial coordinates configured
+    if current_user.latitude is None or current_user.longitude is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Your profile is missing location data. Please configure your latitude and longitude to use proximity search."
+        )
+
+    marketplace_repo = MarketplaceRepository(db)
+    
+    #spatial repository math engine
+    paginated_results = marketplace_repo.get_artists_paginated_by_proximity(
+        current_user_id=current_user.id,
+        tenant_id=current_user.tenant_id,
+        role_type=role_type,
+        my_lat=current_user.latitude,
+        my_lng=current_user.longitude,
+        limit=limit,
+        cursor=cursor
+    )
+    
+    return paginated_results
 
 
 @router.post("/connect", response_model=CollabRequestResponse, status_code=status.HTTP_201_CREATED)

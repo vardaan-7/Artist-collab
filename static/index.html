@@ -42,24 +42,36 @@
                 
                 <div class="panel-box">
                     <h2 style="margin-top: 0; color: #04d361;">Discover Talent</h2>
-                    <p style="color: #a8a8b3; font-size:0.9rem; margin-bottom: 1.5rem;">Find creators in your layer.</p>
-                    <div class="filter-bar">
-                        <select id="role-filter" onchange="fetchMarketplace()">
-                            <option value="">All Creators</option>
-                            <option value="producer">Producers</option>
-                            <option value="vocalist">Vocalists</option>
-                            <option value="designer">Digital Artists</option>
-                        </select>
+                    <p style="color: #a8a8b3; font-size:0.9rem; margin-bottom: 1.5rem;">Find creators sorted by proximity radar.</p>
+                    
+                    <div class="filter-bar" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        <input type="text" id="role-search-input" placeholder="Type a role (e.g. rapper, producer, guitarist)..." style="margin: 0; flex: 1;">
+                        <button onclick="searchProximity(true)" style="margin: 0; padding: 0 1.5rem; background: #04d361; color: #121214; font-weight: bold; width: auto;">Search</button>
                     </div>
+                    
                     <div id="artist-grid" class="artist-grid"></div>
-                </div> <div class="panel-box">
+
+                    <div id="pagination-bar" class="hidden" style="margin-top: 1.5rem; text-align: center; border-top: 1px solid #323238; padding-top: 1rem;">
+                        <button id="next-page-btn" style="background: #8257e5; color: white; width: auto; padding: 0.6rem 2rem; margin: 0;" onclick="searchProximity(false)">Next Page →</button>
+                    </div>
+                </div> 
+
+                <div class="panel-box">
                     <h2 style="margin-top: 0; color: #8257e5;">Incoming Requests</h2>
                     <p style="color: #a8a8b3; font-size:0.9rem; margin-bottom: 1.5rem;">Collaboration offers targeting you.</p>
                     <div id="requests-inbox" class="requests-stack"></div>
-                </div> <div class="panel-box">
+                </div> 
+
+                <div class="panel-box">
                     <h2 style="margin-top: 0; color: #04d361;">Your Network</h2>
                     <p style="color: #a8a8b3; font-size:0.9rem; margin-bottom: 1.5rem;">Verified creative partners in this workspace layer.</p>
                     <div id="active-connections" class="requests-stack"></div>
-                </div> </div> </div> </div> <script src="/static/app.js"></script>
+                </div> 
+
+            </div> 
+        </div> 
+    </div> 
+
+    <script src="/static/app.js"></script>
 </body>
 </html>
