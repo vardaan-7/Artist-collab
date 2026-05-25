@@ -100,6 +100,13 @@ async function searchProximity(isNewSearch = true) {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${token}` }
         });
+        
+        if (response.status === 429) {
+            const errorData = await response.json();
+            // Display our custom backend message as a clean alert warning
+            alert(`⚠️ ${errorData.message || "Rate limit exceeded. Please slow down!"}`);
+            return; // Halt execution so it doesn't try to parse an invalid artist grid
+        }
 
         if (response.ok) {
             const data = await response.json();

@@ -1,6 +1,7 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.middleware.rate_limiter import RedisRateLimiterMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
@@ -29,6 +30,12 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+app.add_middleware(
+    RedisRateLimiterMiddleware, 
+    redis_url="redis://localhost:6379", 
+    max_requests=5, 
+    window_seconds=60
 )
 
 # Register Application Architectural Domain Routers
