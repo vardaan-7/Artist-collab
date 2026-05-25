@@ -29,6 +29,9 @@ class UserRepository:
             artist_name=obj_in.artist_name,
             role_type=obj_in.role_type,
             tenant_id=obj_in.tenant_id,
+            bio=obj_in.bio,
+            latitude=obj_in.latitude,
+            longitude=obj_in.longitude
         )
         self.db.add(db_user)
         self.db.commit()      # Permanently save the transaction

@@ -63,7 +63,7 @@ class MarketplaceRepository:
             FROM users
             WHERE tenant_id = :tenant_id 
               AND id != :current_user_id
-              AND role_type = :role_type
+              AND LOWER(role_type) = LOWER(:role_type)
               AND latitude IS NOT NULL 
               AND longitude IS NOT NULL
         """
