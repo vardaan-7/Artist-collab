@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # Relational Database Service
   postgres_db:
@@ -5,9 +7,9 @@ services:
     container_name: artist_postgres_container
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: supersecretpassword
-      POSTGRES_DB: artist_collab_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5433:5432"
     volumes:
@@ -24,6 +26,22 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
 
+  # Object Storage Service (AWS S3 Simulator)
+  minio_storage:
+    image: minio/minio:latest
+    container_name: artist_minio_container
+    restart: always
+    ports:
+      - "9000:9000"    # MinIO API Port (For FastAPI/boto3 streaming)
+      - "9001:9001"    # MinIO Console Port (For your browser dashboard)
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
 volumes:
   postgres_data:
   qdrant_data:
+  minio_data:

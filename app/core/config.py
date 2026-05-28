@@ -11,12 +11,18 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "admin"
     POSTGRES_PASSWORD: str = "supersecretpassword"
     POSTGRES_SERVER: str = "localhost"
-    POSTGRES_PORT: str = "5432"
+    POSTGRES_PORT: str = "5433"
     POSTGRES_DB: str = "artist_collab_db"
 
     # AI Vector Database Connection Target (Qdrant Container)
     QDRANT_HOST: str = "localhost"
     QDRANT_PORT: int = 6333
+
+    #minio
+    STORAGE_ENDPOINT_URL: str = "http://localhost:9000"
+    STORAGE_ACCESS_KEY: str = "admin"
+    STORAGE_SECRET_KEY: str = "supersecretstorageminiorootpassword"
+    STORAGE_BUCKET_NAME: str = "artist-portfolio-assets"
 
     # Dynamic Connection String Builder using the new Psycopg3 driver parameters
     @property
