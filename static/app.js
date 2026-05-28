@@ -102,10 +102,13 @@ async function searchProximity(isNewSearch = true) {
         });
         
         if (response.status === 429) {
+        try {
             const errorData = await response.json();
-            // Display our custom backend message as a clean alert warning
-            alert(`⚠️ ${errorData.message || "Rate limit exceeded. Please slow down!"}`);
-            return; // Halt execution so it doesn't try to parse an invalid artist grid
+            alert(`⚠️ ${errorData.message}`);
+        } catch (e) {
+            alert("⚠️ Rate limit reached! Slow down your talent search!");
+        }
+        return;
         }
 
         if (response.ok) {
