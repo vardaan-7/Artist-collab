@@ -9,7 +9,7 @@ class Settings(BaseSettings):
 
     # Relational Database Connection Target (PostgreSQL Container)
     POSTGRES_USER: str = "admin"
-    POSTGRES_PASSWORD: str = "supersecretpassword"
+    POSTGRES_PASSWORD: str = ""
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_PORT: str = "5433"
     POSTGRES_DB: str = "artist_collab_db"
@@ -20,8 +20,8 @@ class Settings(BaseSettings):
 
     #minio
     STORAGE_ENDPOINT_URL: str = "http://localhost:9000"
-    STORAGE_ACCESS_KEY: str = "admin"
-    STORAGE_SECRET_KEY: str = "supersecretstorageminiorootpassword"
+    MINIO_ROOT_USER: str = "admin"
+    MINIO_ROOT_PASSWORD: str = ""
     STORAGE_BUCKET_NAME: str = "artist-portfolio-assets"
 
     # Dynamic Connection String Builder using the new Psycopg3 driver parameters
