@@ -7,9 +7,10 @@ from fastapi.responses import FileResponse
 
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.routers import auth
 from app.models.collab import CollabRequest
+from app.models.media import MediaPortfolio
 from app.routers import auth, marketplace
+from app.routers.media import router as media_router
 
 # Instruct SQLAlchemy to auto-create our tables if they don't exist yet
 Base.metadata.create_all(bind=engine)
@@ -23,7 +24,6 @@ app = FastAPI(
 )
 
 # Mount Security CORS Middleware Guard Filters
-# This allows your future React or mobile frontend applications to safely talk to this API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],    # In production, swap "*" for your exact domain names
@@ -31,37 +31,31 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Centralized Redis connection configurations pulled dynamically from Pydantic Settings
 app.add_middleware(
     RedisRateLimiterMiddleware, 
-    redis_url="redis://localhost:6379", 
+    redis_url=settings.REDIS_URL, # Swapped out hardcoded string for global settings param
     max_requests=5, 
     window_seconds=60
 )
 
 # Register Application Architectural Domain Routers
-# This plugs our route directly into the main running server instance
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(marketplace.router, prefix=settings.API_V1_STR)
+app.include_router(media_router, prefix=settings.API_V1_STR)
 
-#Mount the static directory to serve assets, CSS, or JS files
+# Mount the static directory to serve assets, CSS, or JS files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-
-#Update Root Route to Serve the index.html Webpage
+# Serve the main single-page application interface for the artist portal
 @app.get("/", tags=["Frontend"])
 def read_index():
-    """
-    Serves the main single-page application interface for the artist portal.
-    """
     return FileResponse(os.path.join("static", "index.html"))
 
-
-#Relocated Health Check to /health so you don't lose it
+# Core Root System Health Diagnostic Probe
 @app.get("/health", tags=["Health Check"])
 def root_health_check():
-    """
-    Core Root System Health Diagnostic Probe.
-    """
     return {
         "status": "online",
         "message": f"Welcome to the {settings.PROJECT_NAME} API Engine Gateway.",

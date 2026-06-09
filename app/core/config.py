@@ -18,18 +18,27 @@ class Settings(BaseSettings):
     QDRANT_HOST: str = "localhost"
     QDRANT_PORT: int = 6333
 
-    #minio
+    # MinIO Object Storage Configuration
     STORAGE_ENDPOINT_URL: str = "http://localhost:9000"
     MINIO_ROOT_USER: str = "admin"
     MINIO_ROOT_PASSWORD: str = ""
     STORAGE_BUCKET_NAME: str = "artist-portfolio-assets"
 
+    # Distributed Cache Configuration
+    REDIS_URL: str = "redis://localhost:6379"
+
     # Dynamic Connection String Builder using the new Psycopg3 driver parameters
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
-        return f"postgresql+psycopg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        # Gracefully handle empty passwords to prevent formatting malformations
+        pass_str = f":{self.POSTGRES_PASSWORD}" if self.POSTGRES_PASSWORD else ""
+        return f"postgresql+psycopg://{self.POSTGRES_USER}{pass_str}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     # Tell Pydantic to read and load variables from your local hidden .env file
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    model_config = SettingsConfigDict(
+        env_file=".env", 
+        case_sensitive=True, 
+        extra="ignore" # Prevents application crashes if extra variables exist in your .env
+    )
 
 settings = Settings()
