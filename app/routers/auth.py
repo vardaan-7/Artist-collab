@@ -8,6 +8,7 @@ from app.repositories.user_repo import UserRepository
 from app.schemas.user import UserCreate, UserResponse
 from app.routers.deps import get_current_user 
 from app.models.user import User
+from app.models.media import MediaPortfolio  # 💡 1. Import your MediaPortfolio model
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -58,10 +59,19 @@ def login_artist(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-#The Protected Route: Only accessible if a valid JWT token is provided!
+# The Protected Route: Only accessible if a valid JWT token is provided!
 @router.get("/me", response_model=UserResponse)
-def get_authenticated_user_profile(current_user: User = Depends(get_current_user)):
+def get_authenticated_user_profile(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)  # 💡 2. Add database session dependency here
+):
     """
-    Retrieves the private profile of the currently logged-in artist.
+    Retrieves the private profile of the currently logged-in artist along with their signature song preview.
     """
+    # 💡 3. Query the signature track owned by this specific logged-in user
+    signature_track = db.query(MediaPortfolio).filter(MediaPortfolio.user_id == current_user.id).first()
+    
+    # 💡 4. Inject it dynamically so the Pydantic UserResponse schema delivers it to the frontend
+    current_user.signature_track = signature_track
+    
     return current_user
