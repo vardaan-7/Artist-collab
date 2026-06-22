@@ -59,17 +59,42 @@ async function loadDashboard() {
         document.getElementById('user-role').innerText = user.role_type;
         document.getElementById('user-tenant').innerText = user.tenant_id;
         
+        // Render Signature Track Audio Preview cleanly into the card block container
+        const trackContainer = document.getElementById("signature-track-container");
+        if (trackContainer) {
+            if (user.signature_track) {
+                const track = user.signature_track;
+                trackContainer.innerHTML = `
+                    <div style="background: #202024; padding: 1rem; border: 1px solid #323238; border-radius: 4px; text-align: left;">
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: #04d361; font-weight: bold;">
+                            📻 Your Signature Track: <span style="color: #ffffff;">${track.title}</span>
+                        </p>
+                        <audio controls style="width: 100%; height: 32px; outline: none; margin-top: 0.25rem;">
+                            <source src="${track.file_url}" type="${track.mime_type}">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+                `;
+            } else {
+                trackContainer.innerHTML = `
+                    <div style="background: #121214; padding: 1rem; border: 1px dashed #323238; border-radius: 4px; font-size: 0.8rem; color: #a8a8b3; text-align: center;">
+                        🎵 No signature track uploaded. Drop a snippet to unlock vector matchmaking profile radar!
+                    </div>
+                `;
+            }
+        }
+        
         document.getElementById('auth-card').classList.add('hidden');
         document.getElementById('main-dashboard').classList.remove('hidden');
         
-        // 🟢 Sets the initial placeholder for the search field and fires concurrent side panels
+        // Sets the initial placeholder for the search field and fires concurrent side panels
         document.getElementById('artist-grid').innerHTML = `<p style="color: #a8a8b3;">Type an artist role above to map local talent by proximity radar.</p>`;
         fetchIncomingRequests();
         fetchActiveConnections(); 
     } else { logout(); }
 }
 
-// 🟢 UPGRADED DISCOVERY PIECE: Handles geospatial queries and cursor-based offsets
+// UPGRADED DISCOVERY PIECE: Handles geospatial queries and cursor-based offsets
 async function searchProximity(isNewSearch = true) {
     const token = localStorage.getItem('token');
     const targetRole = document.getElementById('role-search-input').value.trim();
@@ -102,13 +127,13 @@ async function searchProximity(isNewSearch = true) {
         });
         
         if (response.status === 429) {
-        try {
-            const errorData = await response.json();
-            alert(`⚠️ ${errorData.message}`);
-        } catch (e) {
-            alert("⚠️ Rate limit reached! Slow down your talent search!");
-        }
-        return;
+            try {
+                const errorData = await response.json();
+                alert(`⚠️ ${errorData.message}`);
+            } catch (e) {
+                alert("⚠️ Rate limit reached! Slow down your talent search!");
+            }
+            return;
         }
 
         if (response.ok) {
