@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     # AI Vector Database Connection Target (Qdrant Container)
     QDRANT_HOST: str = "localhost"
     QDRANT_PORT: int = 6333
+    QDRANT_COLLECTION_NAME: str = "artist_signatures"
 
     # MinIO Object Storage Configuration
     STORAGE_ENDPOINT_URL: str = "http://localhost:9000"

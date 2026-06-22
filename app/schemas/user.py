@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 from typing import Optional
+from app.schemas.media import MediaResponse
 
 # Base Shared User Schemas (Attributes shared across requests and responses)
 class UserBase(BaseModel):
@@ -9,7 +10,7 @@ class UserBase(BaseModel):
     role_type: str = Field(..., description="Producer, Vocalist, Mixing Engineer, etc.")
     tenant_id: str
     
-    # 🟢 NEW SHARED PROFILE ATTRIBUTES
+    # 🟢 SHARED PROFILE ATTRIBUTES
     bio: Optional[str] = Field(
         "Hey there! Ready to jump onto some massive collaborative project tracks.", 
         description="Artist profile biography statement description"
@@ -26,6 +27,10 @@ class UserResponse(UserBase):
     id: int
     is_active: bool
     created_at: datetime
+    
+    # 💡 NESTED SIGNATURE TRACK: 
+    # Automatically pulls the artist's one song signature profile if it exists
+    signature_track: Optional[MediaResponse] = None
 
     # Tells Pydantic to read raw SQLAlchemy database objects natively 
     class Config:

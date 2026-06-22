@@ -12,6 +12,7 @@ from app.models.media import MediaPortfolio
 from app.routers import auth
 from app.routers import marketplace
 from app.routers.media import router as media_router
+from app.services.vector_storage import vector_service
 
 # Instruct SQLAlchemy to auto-create our tables if they don't exist yet
 Base.metadata.create_all(bind=engine)

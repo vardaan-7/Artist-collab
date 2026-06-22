@@ -1,8 +1,8 @@
+import uuid
 import boto3
 from botocore.exceptions import NoCredentialsError, ClientError
 from fastapi import UploadFile
 from app.core.config import settings
-import uuid
 
 class StorageService:
     def __init__(self):
@@ -14,6 +14,17 @@ class StorageService:
             aws_secret_access_key=settings.MINIO_ROOT_PASSWORD,
         )
         self.bucket_name = settings.STORAGE_BUCKET_NAME
+
+        # 💡 AUTO-PROVISION SYSTEM BUCKET: Check if bucket exists, create it if missing
+        try:
+            self.s3_client.head_bucket(Bucket=self.bucket_name)
+        except ClientError as e:
+            error_code = e.response.get('Error', {}).get('Code', 'Unknown')
+            # 404 or specific S3 errors indicate the bucket does not exist yet
+            if error_code in ['404', 'NoSuchBucket']:
+                self.s3_client.create_bucket(Bucket=self.bucket_name)
+            else:
+                print(f"Unexpected storage bucket initialization check error: {e}")
 
     async def upload_audio_snippet(self, file: UploadFile) -> str:
         """

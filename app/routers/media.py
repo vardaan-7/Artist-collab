@@ -3,15 +3,17 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.services.storage import storage_service
 from app.models.media import MediaPortfolio
+from app.models.user import User           # 💡 Added import for your User model
 import app.schemas.media as schema_media
+from app.schemas.user import UserResponse  # 💡 Added import for the upgraded UserResponse schema
 
 router = APIRouter(prefix="/media", tags=["Media Portfolio Operations"])
 
 @router.post("/upload-snippet", response_model=schema_media.MediaResponse, status_code=status.HTTP_201_CREATED)
 async def upload_audio_snippet(
-    title: str = Form(...),                      # Sent as form data alongside the file
-    user_id: int = Form(...),                    # The ID of the artist uploading the file
-    file: UploadFile = File(...),                # The raw multi-part binary stream data
+    title: str = Form(...),                    # Sent as form data alongside the file
+    user_id: int = Form(...),                  # The ID of the artist uploading the file
+    file: UploadFile = File(...),              # The raw multi-part binary stream data
     db: Session = Depends(get_db)
 ):
     """
@@ -35,8 +37,6 @@ async def upload_audio_snippet(
         )
 
     # 3. Create the Database Record
-    # Note: Right now niche_tags is empty. Later on, we will pass the file through
-    # our AI model first right here to populate this list dynamically!
     new_media = MediaPortfolio(
         user_id=user_id,
         title=title,
@@ -51,3 +51,28 @@ async def upload_audio_snippet(
     db.refresh(new_media)
 
     return new_media
+
+
+# 🟢 NEW PROFILE LOOKUP ENDPOINT
+@router.get("/artist/{artist_name}", response_model=UserResponse)
+def get_artist_profile_by_name(artist_name: str, db: Session = Depends(get_db)):
+    """
+    Looks up an artist by their name, fetches their single signature track record,
+    and returns a nested profile payload for the frontend UI profile page.
+    """
+    # 1. Look up the artist profile using the unique artist_name field from the User table
+    artist = db.query(User).filter(User.artist_name == artist_name).first()
+    if not artist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Artist '{artist_name}' could not be found."
+        )
+    
+    # 2. Query your MediaPortfolio table to pull their single signature asset
+    signature_track = db.query(MediaPortfolio).filter(MediaPortfolio.user_id == artist.id).first()
+    
+    # 3. Dynamically inject the file object into our SQLAlchemy user instance
+    # Pydantic matches this with our 'signature_track: Optional[MediaResponse] = None' field
+    artist.signature_track = signature_track
+    
+    return artist
