@@ -10,6 +10,11 @@ from app.repositories.marketplace_repo import MarketplaceRepository
 from app.schemas.user import UserResponse
 from app.schemas.collab import CollabRequestCreate, CollabRequestResponse
 
+# Audio Radar Engine Modules
+from app.services.audio_processor import extract_audio_features
+from app.core.qdrant_setup import qdrant_client
+from qdrant_client.http import models
+
 router = APIRouter(prefix="/marketplace", tags=["Marketplace"])
 
 
@@ -24,8 +29,6 @@ def browse_marketplace(
     creators matching their platform tenant workspace, filtered optionally by role.
     """
     marketplace_repo = MarketplaceRepository(db)
-    
-    # Fetch artists while automatically ignoring the user making the request
     artists = marketplace_repo.get_marketplace_artists(
         current_user_id=current_user.id,
         tenant_id=current_user.tenant_id,
@@ -34,7 +37,7 @@ def browse_marketplace(
     return artists
 
 
-#COMPOSITE GEOSPATIAL PROXIMITY SEARCH ENGINE
+# COMPOSITE GEOSPATIAL PROXIMITY SEARCH ENGINE
 @router.get("/discover")
 def discover_artists_by_proximity(
     role_type: str = Query(..., description="The type of artist you are searching for (e.g., producer)"),
@@ -47,7 +50,6 @@ def discover_artists_by_proximity(
     Protected Endpoint: Returns a Google-style paginated list of target creators 
     sorted dynamically by physical proximity to the requesting artist.
     """
-    # 🛡️ Safety Guard: Ensure the requesting user has spatial coordinates configured
     if current_user.latitude is None or current_user.longitude is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
@@ -55,18 +57,13 @@ def discover_artists_by_proximity(
         )
 
     marketplace_repo = MarketplaceRepository(db)
-    
-    #spatial repository math engine
     paginated_results = marketplace_repo.get_artists_paginated_by_proximity(
         current_user_id=current_user.id,
         tenant_id=current_user.tenant_id,
         role_type=role_type,
-        my_lat=current_user.latitude,
-        my_lng=current_user.longitude,
         limit=limit,
         cursor=cursor
     )
-    
     return paginated_results
 
 
@@ -81,15 +78,12 @@ def initiate_collaboration(
     to another creator within the same tenant layer.
     """
     marketplace_repo = MarketplaceRepository(db)
-    
-    #To ensure you aren't trying to collaborate with yourself
     if payload.receiver_id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You cannot initiate a collaboration request with yourself."
         )
         
-    #database record creation
     new_request = marketplace_repo.create_collab_request(
         tenant_id=current_user.tenant_id,
         sender_id=current_user.id,
@@ -98,22 +92,23 @@ def initiate_collaboration(
     )
     return new_request
 
+
 @router.get("/requests/incoming")
 def get_incoming_requests(
-       current_user: User = Depends(get_current_user),
-       db: Session = Depends(get_db)
-   ):
-       requests = db.query(CollabRequest).filter(
-           CollabRequest.receiver_id == current_user.id,
-           CollabRequest.status == "pending"
-       ).all()
-       
-       return requests
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    requests = db.query(CollabRequest).filter(
+        CollabRequest.receiver_id == current_user.id,
+        CollabRequest.status == "pending"
+    ).all()
+    return requests
+
 
 @router.patch("/requests/{request_id}/status", response_model=CollabRequestResponse)
 def respond_to_collab_request(
     request_id: int,
-    action: str, # Expecting either "accepted" or "declined"
+    action: str, 
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -127,15 +122,13 @@ def respond_to_collab_request(
         )
         
     marketplace_repo = MarketplaceRepository(db)
-    
-    # Execute the update pipeline inside our repository
     updated_request = marketplace_repo.update_collab_request_status(
         request_id=request_id,
         current_user_id=current_user.id,
         new_status=action
     )
-    
     return updated_request
+
 
 @router.get("/connections", response_model=List[UserResponse])
 def view_active_connections(
@@ -152,3 +145,133 @@ def view_active_connections(
         tenant_id=current_user.tenant_id
     )
     return connections
+
+
+# AUDIO SIMILARITY RADAR ENDPOINTS ───────────────────────────────────────
+
+@router.post("/sync-audio-radar")
+def sync_audio_radar(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Protected Endpoint: Extracts 33 numerical traits from the user's 
+    signature track file and index maps it inside the Qdrant vector system.
+    """
+    if not getattr(current_user, "portfolios", None):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You haven't uploaded any items to your portfolio yet."
+        )
+
+    audio_track = next((item for item in current_user.portfolios if item.file_type == "audio"), None)
+    if not audio_track or not audio_track.file_url:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No primary audio track asset located inside your portfolio profile."
+        )
+
+    # Automatically parses the web link URL, downloads locally, and extracts vectors
+    vector = extract_audio_features(audio_track.file_url)
+    if not vector:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Failed to compile numerical sonic characteristics from file."
+        )
+
+    try:
+        qdrant_client.upsert(
+            collection_name="artist_audio_radar",
+            points=[
+                models.PointStruct(
+                    id=current_user.id,
+                    vector=vector,
+                    payload={
+                        "artist_id": current_user.id,
+                        "artist_name": current_user.artist_name,
+                        "role_type": current_user.role_type,
+                        "tenant_id": current_user.tenant_id
+                    }
+                )
+            ]
+        )
+        return {
+            "status": "synchronized",
+            "message": f"Sonic vector footprint compiled successfully for '{current_user.artist_name}'!"
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Qdrant storage cluster upload failure: {str(e)}"
+        )
+
+
+@router.get("/discover/audio")
+def discover_by_audio_similarity(
+    limit: int = Query(5, ge=1, le=20),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Protected Endpoint: Searches Qdrant for other artists whose music files 
+    sound closest to the current user's profile track based on vector angles.
+    """
+    try:
+        # 1. Fetch current user's vector map from Qdrant directly to use as query seed
+        point_result = qdrant_client.retrieve(
+            collection_name="artist_audio_radar",
+            ids=[current_user.id]
+        )
+        
+        if not point_result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Your sonic fingerprint vector hasn't been generated yet. Please sync your track first."
+            )
+            
+        my_vector = point_result[0].vector
+
+        # 2.Backward Compatibility Fix: Using .search() for Qdrant Server v1.9.0 compatibility
+        search_results = qdrant_client.search(
+            collection_name="artist_audio_radar",
+            query_vector=my_vector,
+            query_filter=models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="tenant_id",
+                        match=models.MatchValue(value=current_user.tenant_id)
+                    )
+                ],
+                must_not=[
+                    models.FieldCondition(
+                        key="artist_id",
+                        match=models.MatchValue(value=current_user.id)
+                    )
+                ]
+            ),
+            limit=limit,
+            with_payload=True
+        )
+
+        # 3. Format matches into a clean tracking response payload map
+        matches = []
+        for match in search_results:
+            matches.append({
+                "artist_id": match.payload.get("artist_id"),
+                "artist_name": match.payload.get("artist_name"),
+                "role_type": match.payload.get("role_type"),
+                "match_score": round(match.score * 100, 2)
+            })
+
+        return {
+            "search_origin_artist": current_user.artist_name,
+            "similar_creators": matches
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Vector matching index scan failed: {str(e)}"
+        )
