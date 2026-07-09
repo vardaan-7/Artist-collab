@@ -9,6 +9,7 @@ from app.models.collab import CollabRequest
 from app.repositories.marketplace_repo import MarketplaceRepository
 from app.schemas.user import UserResponse
 from app.schemas.collab import CollabRequestCreate, CollabRequestResponse
+import requests
 
 # Audio Radar Engine Modules
 from app.services.audio_processor import extract_audio_features
@@ -220,7 +221,8 @@ def discover_by_audio_similarity(
         # 1. Fetch current user's vector map from Qdrant directly to use as query seed
         point_result = qdrant_client.retrieve(
             collection_name="artist_audio_radar",
-            ids=[current_user.id]
+            ids=[current_user.id],
+            with_vectors=True
         )
         
         if not point_result:
@@ -229,40 +231,74 @@ def discover_by_audio_similarity(
                 detail="Your sonic fingerprint vector hasn't been generated yet. Please sync your track first."
             )
             
-        my_vector = point_result[0].vector
+        # Print out exactly what the structure looks like to your Uvicorn console for debugging
+        raw_data = point_result[0].vector
+        if isinstance(raw_data, dict):
+            my_vector = [float(x) for x in list(raw_data.values())[0]]
+        else:
+            my_vector = [float(x) for x in raw_data]
 
-        # 2.Backward Compatibility Fix: Using .search() for Qdrant Server v1.9.0 compatibility
-        search_results = qdrant_client.search(
-            collection_name="artist_audio_radar",
-            query_vector=my_vector,
-            query_filter=models.Filter(
-                must=[
-                    models.FieldCondition(
-                        key="tenant_id",
-                        match=models.MatchValue(value=current_user.tenant_id)
-                    )
-                ],
-                must_not=[
-                    models.FieldCondition(
-                        key="artist_id",
-                        match=models.MatchValue(value=current_user.id)
-                    )
-                ]
-            ),
-            limit=limit,
-            with_payload=True
-        )
+
+        # 2 RAW HTTP REST FALLBACK: Bypasses client version limits completely
+        # Adjust URL if your app reads host/port configuration from your setup variables
+        qdrant_url = f"http://localhost:6333/collections/artist_audio_radar/points/search"
+        
+        payload = {
+          "vector": my_vector,
+          "filter": {
+            "must": [
+              {
+                "key": "tenant_id",
+                "match": {
+                  "value": current_user.tenant_id
+                }
+              }
+            ],
+            "must_not": [
+              {
+                "key": "artist_id",
+                "match": {
+                  "value": current_user.id
+                }
+              }
+            ]
+          },
+          "limit": limit,
+          "with_payload": True
+        }
+
+        response = requests.post(qdrant_url, json=payload, timeout=5)
+        
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Qdrant engine REST endpoint rejected request: {response.text}"
+            )
+            
+        search_results = response.json().get("result", [])
 
         # 3. Format matches into a clean tracking response payload map
         matches = []
         for match in search_results:
             matches.append({
-                "artist_id": match.payload.get("artist_id"),
-                "artist_name": match.payload.get("artist_name"),
-                "role_type": match.payload.get("role_type"),
-                "match_score": round(match.score * 100, 2)
+                "artist_id": match.get("payload", {}).get("artist_id"),
+                "artist_name": match.get("payload", {}).get("artist_name"),
+                "role_type": match.get("payload", {}).get("role_type"),
+                "match_score": round(match.get("score", 0) * 100, 2)
             })
 
+        return {
+            "search_origin_artist": current_user.artist_name,
+            "similar_creators": matches
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Vector matching index scan failed: {str(e)}"
+        )
         return {
             "search_origin_artist": current_user.artist_name,
             "similar_creators": matches
