@@ -22,22 +22,27 @@ class RedisRateLimiterMiddleware(BaseHTTPMiddleware):
         """
         Intercepts every incoming HTTP request packet before hitting the router layer.
         """
-        # 1. Extract the unique identifier for the caller (Client IP address)
-        client_ip = request.client.host
+        # 🟢 1. Fast-Path Bypass: Skip checking rate limits entirely for chat short-polling
+        exempt_paths = ["/api/v1/chat/history", "/static"]
+        if any(request.url.path.startswith(path) for path in exempt_paths):
+            return await call_next(request)
+
+        # 2. Extract the unique identifier for the caller (Client IP address)
+        client_ip = request.client.host if request.client else "unknown"
         path = request.url.path
         
         # Define a unique Redis key per user-endpoint pair
         redis_key = f"rate:{client_ip}:{path}"
         
         try:
-            # 2. Increment the value in Redis atomically
+            # 3. Increment the value in Redis atomically
             current_hits = await self.redis.incr(redis_key)
             
-            # 3. If it's the very first hit in this window, set the TTL expiration
+            # 4. If it's the very first hit in this window, set the TTL expiration
             if current_hits == 1:
                 await self.redis.expire(redis_key, self.window_seconds)
                 
-            # 4. Check if the client has breached the threshold bounds
+            # 5. Check if the client has breached the threshold bounds
             if current_hits > self.max_requests:
                 # Shield your backend by short-circuiting right here!
                 return JSONResponse(

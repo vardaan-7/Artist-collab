@@ -9,6 +9,9 @@ document.getElementById('toggle-form').addEventListener('click', () => {
     isLogin = !isLogin;
     document.getElementById('form-title').innerText = isLogin ? "Artist Login" : "Register Account";
     document.getElementById('toggle-form').innerText = isLogin ? "Create an account instead" : "Already have an account? Login";
+    document.getElementById('email').value = "";
+    document.getElementById('password').value = "";
+    if(document.getElementById('artist_name')) document.getElementById('artist_name').value = "";
     document.querySelectorAll('.reg-field').forEach(el => el.classList.toggle('hidden', isLogin));
 });
 
@@ -24,8 +27,15 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
         if (response.ok) {
             const data = await response.json();
             localStorage.setItem('token', data.access_token);
+            
+            // 🟢 Clear the input credentials clean so they aren't left in the DOM caching layer
+            document.getElementById('email').value = "";
+            document.getElementById('password').value = "";
+            
             loadDashboard();
-        } else { alert("Login failed. Check credentials."); }
+        } else { 
+            alert("Login failed. Check credentials."); 
+        }
     } else {
         const payload = {
             email: document.getElementById('email').value,
@@ -40,8 +50,12 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        if (response.ok) { alert("Registration complete! Go ahead and log in."); location.reload(); } 
-        else { alert("Registration failed."); }
+        if (response.ok) { 
+            alert("Registration complete! Go ahead and log in."); 
+            location.reload(); 
+        } else { 
+            alert("Registration failed."); 
+        }
     }
 });
 
@@ -264,14 +278,20 @@ function injectChatUIElements() {
         <div style="padding:12px; background:#202024; border-bottom:1px solid #29292e; display:flex; justify-content:space-between; align-items:center; border-top-left-radius:8px; border-top-right-radius:8px;">
             <div>
                 <strong id="chat-title" style="color:#04d361;">Chat Pane</strong>
-                <div style="font-size:9px; color:#f75a68; margin-top:2px;">⚠️ Chats delete after 3 days</div>
             </div>
             <button onclick="closeChatWindow()" style="background:transparent; border:none; color:#a8a8b3; cursor:pointer; font-size:16px;">✕</button>
         </div>
         <div id="chat-messages" style="flex:1; padding:15px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; background:#121214;"></div>
-        <form id="chat-submit-form" style="padding:10px; border-top:1px solid #29292e; display:flex; gap:6px; background:#202024; border-bottom-left-radius:8px; border-bottom-right-radius:8px;">
-            <input type="text" id="chat-input-text" placeholder="Type text..." required autocomplete="off" style="flex:1; width:100%; min-width:0; padding:8px; background:#121214; border:1px solid #29292e; color:white; border-radius:4px; outline:none;">
-            <button type="submit" style="background:#0070f3; color:white; border:none; padding:0 20px; border-radius:4px; cursor:pointer; font-weight:bold; white-space:nowrap;">Send</button>
+        
+        <form id="chat-submit-form" style="padding:10px; border-top:1px solid #29292e; display:flex !important; flex-direction:row !important; align-items:center !important; gap:8px !important; background:#202024; border-bottom-left-radius:8px; border-bottom-right-radius:8px; width:100% !important; box-sizing:border-box !important;">
+            
+            <input type="text" id="chat-input-text" placeholder="Type text..." required autocomplete="off" 
+                style="flex: 1 !important; display: block !important; width: 100% !important; min-width: 0 !important; height: 38px !important; padding: 0 12px !important; background:#121214 !important; border:1px solid #29292e !important; color:white !important; border-radius:4px !important; outline:none !important; box-sizing:border-box !important;">
+            
+            <button type="submit" 
+                style="flex-shrink: 0 !important; width: auto !important; height: 38px !important; background:#0070f3 !important; color:white !important; border:none !important; padding:0 20px !important; border-radius:4px !important; cursor:pointer !important; font-weight:bold !important; white-space:nowrap !important; box-sizing:border-box !important;">
+                Send
+            </button>
         </form>
     `;
     document.body.appendChild(modal);
