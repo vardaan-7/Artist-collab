@@ -30,3 +30,29 @@ button:hover { background: #02b852; }
 .accept-btn { background: #04d361; color: black; margin: 0; padding: 0.45rem; font-size: 0.8rem; }
 .decline-btn { background: #f75a68; color: white; margin: 0; padding: 0.45rem; font-size: 0.8rem; }
 .decline-btn:hover { background: #c53030; }
+
+/* Custom scrollbar styling for the chat thread box */
+#chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+#chat-messages::-webkit-scrollbar-thumb {
+    background: #29292e;
+    border-radius: 4px;
+}
+
+/* Subtle animations for the chat window popup */
+#chat-modal {
+    animation: slideUp 0.25s ease-out;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6) !important;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

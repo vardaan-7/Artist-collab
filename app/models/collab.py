@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Column, String, Integer, ForeignKey, Enum, DateTime
+from sqlalchemy import Column, String, Integer, ForeignKey, Enum, DateTime, Text
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -22,3 +22,12 @@ class CollabRequest(Base):
     status = Column(Enum(CollabStatus), default=CollabStatus.PENDING, nullable=False)
     message = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    sender_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    receiver_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    message_text = Column(Text, nullable=False)
+    sent_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)

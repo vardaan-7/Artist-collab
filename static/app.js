@@ -1,6 +1,9 @@
-let isLogin = true;
-const apiBase = "http://127.0.0.1:8000/api/v1/marketplace"; // Optimized to point directly to your router prefix
-let currentCursor = null;  // 🟢 Global state variable tracking the Base64 composite pagination token
+isLogin = true;
+const apiBase = "http://127.0.0.1:8000/api/v1/marketplace"; 
+const chatApiBase = "http://127.0.0.1:8000/api/v1/chat"; // 🟢 Connected to your new chat router prefix
+let currentCursor = null;  
+let activeChatArtistId = null; // 🟢 Globally tracks who you are messaging
+let chatPollingInterval = null; // 🟢 Controls short polling loops
 
 document.getElementById('toggle-form').addEventListener('click', () => {
     isLogin = !isLogin;
@@ -14,7 +17,6 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
     
     if (isLogin) {
         const formData = new URLSearchParams();
-        // Since your backend expects an OAuth2 Form login, let's keep hitting the proper auth path
         formData.append('username', document.getElementById('email').value);
         formData.append('password', document.getElementById('password').value);
 
@@ -59,7 +61,6 @@ async function loadDashboard() {
         document.getElementById('user-role').innerText = user.role_type;
         document.getElementById('user-tenant').innerText = user.tenant_id;
         
-        // Render Signature Track Audio Preview cleanly into the card block container
         const trackContainer = document.getElementById("signature-track-container");
         if (trackContainer) {
             if (user.signature_track) {
@@ -87,14 +88,16 @@ async function loadDashboard() {
         document.getElementById('auth-card').classList.add('hidden');
         document.getElementById('main-dashboard').classList.remove('hidden');
         
-        // Sets the initial placeholder for the search field and fires concurrent side panels
         document.getElementById('artist-grid').innerHTML = `<p style="color: #a8a8b3;">Type an artist role above to map local talent by proximity radar.</p>`;
+        
+        // Inject structural Chat HTML Container dynamically at the base of the page layout
+        injectChatUIElements();
+
         fetchIncomingRequests();
         fetchActiveConnections(); 
     } else { logout(); }
 }
 
-// UPGRADED DISCOVERY PIECE: Handles geospatial queries and cursor-based offsets
 async function searchProximity(isNewSearch = true) {
     const token = localStorage.getItem('token');
     const targetRole = document.getElementById('role-search-input').value.trim();
@@ -106,16 +109,13 @@ async function searchProximity(isNewSearch = true) {
         return;
     }
 
-    // Reset global pagination parameters if starting a clean query criteria execution
     if (isNewSearch) {
         currentCursor = null;
         grid.innerHTML = '<p style="color: #a8a8b3;">Scanning local workspace radar coordinates...</p>';
     }
 
-    // Pointing directly to our advanced cursor routing engine path
     let url = `${apiBase}/discover?role_type=${encodeURIComponent(targetRole)}&limit=10`;
     
-    // Inject the pagination state token if executing a progressive page advancement sequence
     if (!isNewSearch && currentCursor) {
         url += `&cursor=${encodeURIComponent(currentCursor)}`;
     }
@@ -127,12 +127,7 @@ async function searchProximity(isNewSearch = true) {
         });
         
         if (response.status === 429) {
-            try {
-                const errorData = await response.json();
-                alert(`⚠️ ${errorData.message}`);
-            } catch (e) {
-                alert("⚠️ Rate limit reached! Slow down your talent search!");
-            }
+            alert("⚠️ Rate limit reached! Slow down your talent search!");
             return;
         }
 
@@ -140,7 +135,6 @@ async function searchProximity(isNewSearch = true) {
             const data = await response.json();
             const artists = data.artists;
             
-            // Advance state references
             currentCursor = data.paging.next_cursor;
             const hasMore = data.paging.has_more;
 
@@ -152,7 +146,6 @@ async function searchProximity(isNewSearch = true) {
                 return;
             }
 
-            // Loop and append elements dynamically
             artists.forEach(artist => {
                 const el = document.createElement('div');
                 el.className = 'artist-card';
@@ -172,7 +165,6 @@ async function searchProximity(isNewSearch = true) {
                 grid.appendChild(el);
             });
 
-            // Toggle visual display state of the pagination controls container boundary
             if (hasMore && currentCursor) {
                 paginationBar.classList.remove('hidden');
             } else {
@@ -227,7 +219,9 @@ async function fetchIncomingRequests() {
 
 async function fetchActiveConnections() {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${apiBase}/connections`, {
+    
+    // 🔍 Fetching from our newly deduplicated distinct contacts path
+    const response = await fetch(`${chatApiBase}/contacts`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -249,12 +243,111 @@ async function fetchActiveConnections() {
                 <div>
                     <strong style="font-size: 1.1rem; color: #04d361;">🤝 ${partner.artist_name}</strong><br>
                     <span class="artist-role" style="background: #04d361; color: black; font-weight: bold;">${partner.role_type.toUpperCase()}</span>
-                    <div class="artist-bio">${partner.bio || 'Connected collaborator profile workspace.'}</div>
                 </div>
-                <button class="connect-btn" style="background:#202024; border: 1px solid #323238; color:#a8a8b3;" onclick="alert('Shared workspace coming soon!')">Open Project</button>
+                <button class="connect-btn" style="background:#0070f3; border: none; color:#ffffff;" onclick="openChatWindow(${partner.artist_id}, '${partner.artist_name}')">Chat Now</button>
             `;
             networkBox.appendChild(el);
         });
+    }
+}
+
+// 🟢 CHAT INTERACTION OVERLAY LOGIC
+function injectChatUIElements() {
+    if (document.getElementById('chat-modal')) return;
+
+    const modal = document.createElement('div');
+    modal.id = 'chat-modal';
+    modal.className = 'hidden';
+    modal.style = "position:fixed; bottom:20px; right:20px; width:360px; height:450px; background:#121214; border:1px solid #29292e; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.5); display:flex; flex-direction:column; z-index:9999; color:white; font-family:sans-serif;";
+    
+    modal.innerHTML = `
+        <div style="padding:12px; background:#202024; border-bottom:1px solid #29292e; display:flex; justify-content:space-between; align-items:center; border-top-left-radius:8px; border-top-right-radius:8px;">
+            <div>
+                <strong id="chat-title" style="color:#04d361;">Chat Pane</strong>
+                <div style="font-size:9px; color:#f75a68; margin-top:2px;">⚠️ Chats delete after 3 days</div>
+            </div>
+            <button onclick="closeChatWindow()" style="background:transparent; border:none; color:#a8a8b3; cursor:pointer; font-size:16px;">✕</button>
+        </div>
+        <div id="chat-messages" style="flex:1; padding:15px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; background:#121214;"></div>
+        <form id="chat-submit-form" style="padding:10px; border-top:1px solid #29292e; display:flex; gap:6px; background:#202024; border-bottom-left-radius:8px; border-bottom-right-radius:8px;">
+            <input type="text" id="chat-input-text" placeholder="Type text..." required autocomplete="off" style="flex:1; width:100%; min-width:0; padding:8px; background:#121214; border:1px solid #29292e; color:white; border-radius:4px; outline:none;">
+            <button type="submit" style="background:#0070f3; color:white; border:none; padding:0 20px; border-radius:4px; cursor:pointer; font-weight:bold; white-space:nowrap;">Send</button>
+        </form>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('chat-submit-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = document.getElementById('chat-input-text');
+        const text = input.value.trim();
+        if (!text || !activeChatArtistId) return;
+
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${chatApiBase}/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ receiver_id: activeChatArtistId, message_text: text })
+        });
+
+        if (response.ok) {
+            input.value = "";
+            fetchChatTimeline(); // Reload view immediately
+        }
+    });
+}
+
+function openChatWindow(artistId, artistName) {
+    activeChatArtistId = artistId;
+    document.getElementById('chat-title').innerText = `Chat with ${artistName}`;
+    document.getElementById('chat-modal').classList.remove('hidden');
+    
+    fetchChatTimeline();
+    clearInterval(chatPollingInterval);
+    chatPollingInterval = setInterval(fetchChatTimeline, 3000); // 🕒 Poll every 3 seconds
+}
+
+function closeChatWindow() {
+    document.getElementById('chat-modal').classList.add('hidden');
+    activeChatArtistId = null;
+    clearInterval(chatPollingInterval);
+}
+
+async function fetchChatTimeline() {
+    if (!activeChatArtistId) return;
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch(`${chatApiBase}/history/${activeChatArtistId}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (response.ok) {
+        const messages = await response.json();
+        const box = document.getElementById('chat-messages');
+        box.innerHTML = '';
+
+        if (messages.length === 0) {
+            box.innerHTML = `<p style="color:#555; text-align:center; font-size:12px; margin-top:20px;">No messages. Send a message to start!</p>`;
+            return;
+        }
+
+        messages.forEach(msg => {
+            const isMe = msg.sender_id !== activeChatArtistId;
+            const bubble = document.createElement('div');
+            bubble.style = `
+                padding: 8px 12px; 
+                border-radius: 8px; 
+                max-width: 75%; 
+                font-size: 13px; 
+                word-break: break-word;
+                align-self: ${isMe ? 'flex-end' : 'flex-start'}; 
+                background: ${isMe ? '#0070f3' : '#29292e'};
+                color: white;
+            `;
+            bubble.innerText = msg.message_text;
+            box.appendChild(bubble);
+        });
+        box.scrollTop = box.scrollHeight; // Auto-scroll down
     }
 }
 
@@ -265,39 +358,26 @@ async function sendConnectRequest(receiverId) {
 
     const response = await fetch(`${apiBase}/connect`, {
         method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ receiver_id: receiverId, message: userMsg })
     });
 
-    if (response.ok) {
-        alert("Collaboration connection request dispatched successfully!");
-    } else {
-        const errData = await response.json();
-        alert(`Failed to connect: ${errData.detail || 'Unknown error'}`);
-    }
+    if (response.ok) { alert("Collaboration connection request dispatched successfully!"); } 
+    else { alert(`Failed to connect: ${(await response.json()).detail || 'Unknown error'}`); }
 }
 
 async function handleRequestAction(requestId, actionType) {
     const token = localStorage.getItem('token');
-    
     const response = await fetch(`${apiBase}/requests/${requestId}/status?action=${actionType}`, {
         method: 'PATCH',
-        headers: { 
-            'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
     });
 
     if (response.ok) {
         alert(`Request ${actionType} successfully!`);
         fetchIncomingRequests(); 
         fetchActiveConnections();
-    } else {
-        const errData = await response.json();
-        alert(`Failed to update request: ${errData.detail || 'Unknown error'}`);
-    }
+    } else { alert(`Failed to update request: ${(await response.json()).detail || 'Unknown error'}`); }
 }
 
 function logout() {

@@ -61,6 +61,8 @@ def discover_artists_by_proximity(
     paginated_results = marketplace_repo.get_artists_paginated_by_proximity(
         current_user_id=current_user.id,
         tenant_id=current_user.tenant_id,
+        my_lat=current_user.latitude,
+        my_lng=current_user.longitude,
         role_type=role_type,
         limit=limit,
         cursor=cursor

@@ -10,7 +10,7 @@ from app.core.database import engine, Base
 from app.models.collab import CollabRequest
 from app.models.media import MediaPortfolio
 from app.routers import auth
-from app.routers import marketplace
+from app.routers import marketplace, chat
 from app.routers.media import router as media_router
 from app.services.vector_storage import vector_service
 
@@ -46,6 +46,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(marketplace.router, prefix=settings.API_V1_STR)
 app.include_router(media_router, prefix=settings.API_V1_STR)
+app.include_router(chat.router, prefix="/api/v1")
 
 # Mount the static directory to serve assets, CSS, or JS files
 app.mount("/static", StaticFiles(directory="static"), name="static")
