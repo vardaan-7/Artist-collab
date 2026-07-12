@@ -16,3 +16,7 @@ anyio==4.13.0
 h11==0.16.0
 starlette==1.0.0
 websockets==16.0
+redis==7.4.0
+qdrant-client==1.18.0
+PyYAML==6.0.3
+websockets==16.0
