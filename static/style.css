@@ -1,315 +1,242 @@
-/* ==========================================================================
-   1. GLOBAL SYSTEM STYLES & BASE LAYOUT
-   ========================================================================== */
+:root {
+    --bg-gradient: linear-gradient(135deg, #09090b 0%, #111019 50%, #160d26 100%);
+    --glass-bg: rgba(255, 255, 255, 0.02);
+    --glass-border: rgba(255, 255, 255, 0.06);
+    --glass-highlight: rgba(255, 255, 255, 0.08);
+    --text-primary: #fafafa;
+    --text-secondary: #a1a1aa;
+    --accent-green: #04d361;
+    --accent-purple: #8257e5;
+    --card-dark: rgba(9, 9, 11, 0.4);
+}
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 body {
-    background-color: #121214;
-    color: #e1e1e6;
+    background: var(--bg-gradient);
     min-height: 100vh;
-    padding: 2rem 1rem;
+    color: var(--text-primary);
     display: flex;
     justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden; /* Main window viewport lock */
 }
 
-.container {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
+/* Ambient Vector Lighting System Behind Glass Elements */
+body::before {
+    content: '';
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(130, 87, 229, 0.12) 0%, transparent 70%);
+    top: -10%;
+    left: -10%;
+    z-index: 0;
+    pointer-events: none;
 }
 
+body::after {
+    content: '';
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(4, 211, 97, 0.08) 0%, transparent 70%);
+    bottom: -10%;
+    right: -10%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Hidden Class Utility */
 .hidden {
     display: none !important;
 }
 
-/* ==========================================================================
-   2. AUTHENTICATION LANDING STATE (Login/Register Card)
-   ========================================================================== */
-#auth-card {
-    max-width: 480px;
-    margin: 4rem auto 0 auto;
-}
-
-#auth-form {
+/* Layout Core Wrapper */
+.container {
+    width: 96vw;
+    height: 92vh;
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    z-index: 1;
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-top: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
 }
 
-/* ==========================================================================
-   3. STRUCTURAL MASTER DASHBOARD (Side-by-Side Flex Engine)
-   ========================================================================== */
-.dashboard-layout {
-    display: flex;
-    flex-direction: row;
-    gap: 2rem;
-    align-items: flex-start;
+/* Glassmorphism Authentication Viewport */
+.card {
+    background: var(--card-dark);
+    border: 1px solid var(--glass-border);
+    padding: 2.5rem;
+    border-radius: 16px;
     width: 100%;
-}
-
-/* Left Sidebar Layout Constraints */
-.dashboard-layout > .card {
-    flex-shrink: 0;
-    width: 320px;
-}
-
-/* Right Workspace Grid Layout System */
-.workspace-grid {
-    flex: 1;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-    width: 100%;
-}
-
-/* ==========================================================================
-   4. reusable SHared PANELS AND CONTAINER MODULES
-   ========================================================================== */
-.card, .panel-box {
-    background-color: #202024;
-    border: 1px solid #29292e;
-    border-radius: 8px;
-    padding: 1.5rem;
+    max-width: 440px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     text-align: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.panel-box {
-    text-align: left;
-    height: max-content;
-    min-height: 400px;
-    display: flex;
-    flex-direction: column;
 }
 
 .card h2 {
-    color: #ffffff;
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.75rem;
+    margin-bottom: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
 }
 
-.panel-box h2 {
-    font-size: 1.3rem;
-    margin-bottom: 0.5rem;
-}
-
-.panel-box p {
-    margin-bottom: 1rem;
-}
-
-/* ==========================================================================
-   5. UI CONTROLS, ACTIONS & BUTTON ARCHITECTURE
-   ========================================================================== */
-button {
-    font-weight: bold;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-button:active {
-    transform: scale(0.98);
-}
-
-.btn-primary {
-    background-color: #8257e5;
-    color: #ffffff;
-}
-
-.btn-primary:hover {
-    background-color: #9466ff;
-}
-
-/* Authentication Submit Layout Button */
-#submit-btn {
-    background-color: #04d361;
-    color: #121214;
-    padding: 0.8rem;
-    font-size: 1rem;
-    width: 100%;
-}
-
-#submit-btn:hover {
-    background-color: #06e86c;
-}
-
-/* Global Log Out Action Control */
-button[onclick="logout()"] {
-    padding: 0.75rem;
-    font-size: 0.9rem;
-}
-
-button[onclick="logout()"]:hover {
-    background-color: #ffffff;
-}
-
-/* Navigation & Toggle Link Strings */
-.link {
-    color: #8257e5;
-    cursor: pointer;
-    text-decoration: underline;
-    font-size: 0.9rem;
-}
-
-.link:hover {
-    color: #9466ff;
-}
-
-/* ==========================================================================
-   6. FORMS, INPUT PANELS, AND DROPDOWN MENUS
-   ========================================================================== */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-select {
-    width: 100%;
-    padding: 0.8rem 1rem;
-    background-color: #121214;
-    border: 1px solid #29292e;
-    border-radius: 4px;
-    color: #ffffff;
-    font-size: 0.95rem;
-    outline: none;
-    transition: border-color 0.2s ease;
-}
-
-input:focus, select:focus {
-    border-color: #8257e5;
-}
-
-/* Structured Optgroup Option Labels Configuration */
-select optgroup {
-    background-color: #202024;
-    color: #a8a8b3;
-    font-style: normal;
-    font-weight: bold;
-}
-
-select option {
-    background-color: #121214;
-    color: #ffffff;
-}
-
-/* ==========================================================================
-   7. ARTIST MARKPLACE GRID & PORFOLIO STREAM FEED Cards
-   ========================================================================== */
-.artist-grid, .requests-stack {
+/* Form Fields Styling Definitions */
+form {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    flex: 1;
+}
+
+input, select {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid var(--glass-border) !important;
+    padding: 0.85rem 1rem !important;
+    border-radius: 8px !important;
+    color: var(--text-primary) !important;
+    font-size: 0.95rem !important;
+    width: 100% !important;
+    transition: all 0.3s ease;
+}
+
+input:focus, select:focus {
+    outline: none !important;
+    border-color: var(--accent-purple) !important;
+    box-shadow: 0 0 0 2px rgba(130, 87, 229, 0.2) !important;
+}
+
+select option, select optgroup {
+    background: #121214 !important;
+    color: var(--text-primary) !important;
+}
+
+/* Interaction Controls */
+button {
+    padding: 0.85rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+}
+
+#submit-btn {
+    background: var(--accent-green);
+    color: #09090b;
+}
+
+#submit-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(4, 211, 151, 0.3);
+}
+
+.link {
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-decoration: underline;
+    transition: color 0.2s;
+}
+
+.link:hover {
+    color: var(--text-primary);
+}
+
+/* Full Screen Dashboard Architecture Grid */
+.dashboard-layout {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    overflow: hidden;
+}
+
+/* Profile Left Sidebar */
+.dashboard-layout > .card {
+    max-width: 100% !important;
+    height: 100% !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-right: 1px solid var(--glass-border) !important;
+    background: rgba(0, 0, 0, 0.15) !important;
+    padding: 2rem !important;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
     overflow-y: auto;
 }
 
-.artist-card, .request-card {
-    background-color: #121214;
-    border: 1px solid #29292e;
-    border-radius: 6px;
-    padding: 1rem;
+.dashboard-layout > .card button {
+    margin-top: auto !important;
+}
+
+/* Workspace Right Main Canvas Panel */
+.workspace-grid {
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 1.5rem;
+    overflow-y: auto; /* Dynamic content vertical panning scroll */
+}
+
+/* Workspace Panels styling - Top Left Discover block spans 2 rows */
+.panel-box {
+    background: var(--card-dark);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    padding: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.panel-box:nth-child(1) {
+    grid-row: span 2;
+}
+
+.panel-box h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+/* Elements Structural Stacks */
+.requests-stack, .artist-grid {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    justify-content: space-between;
+    overflow-y: auto;
+    flex-grow: 1;
 }
 
-.artist-role {
-    display: inline-block;
-    font-size: 0.75rem;
-    font-weight: bold;
-    color: #04d361;
-    background-color: rgba(4, 211, 97, 0.1);
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    width: max-content;
-    margin-top: 0.25rem;
+/* Custom Profile Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
 }
-
-.artist-bio {
-    font-size: 0.85rem;
-    color: #a8a8b3;
-    line-height: 1.4;
-    margin-top: 0.5rem;
+::-webkit-scrollbar-track {
+    background: transparent;
 }
-
-/* Network Handshake & Trigger Action Row Buttons */
-.connect-btn, .accept-btn, .decline-btn {
-    width: 100%;
-    padding: 0.6rem;
-    font-size: 0.85rem;
+::-webkit-scrollbar-thumb {
+    background: var(--glass-border);
+    border-radius: 10px;
 }
-
-.connect-btn {
-    background-color: #8257e5;
-    color: #ffffff;
-}
-
-.connect-btn:hover {
-    background-color: #9466ff;
-}
-
-.btn-group {
-    display: flex;
-    gap: 0.5rem;
-    width: 100%;
-}
-
-.accept-btn {
-    background-color: #04d361;
-    color: #121214;
-}
-
-.accept-btn:hover {
-    background-color: #06e86c;
-}
-
-.decline-btn {
-    background-color: #ff3b30;
-    color: #ffffff;
-}
-
-.decline-btn:hover {
-    background-color: #ff4f45;
-}
-
-/* ==========================================================================
-   8. MEDIA CONTROLS & EMBEDDED AUDIO RADAR MODULES
-   ========================================================================== */
-audio::-webkit-media-controls-panel {
-    background-color: #202024;
-}
-
-audio::-webkit-media-controls-current-time-display,
-audio::-webkit-media-controls-time-remaining-display {
-    color: #ffffff;
-}
-
-/* ==========================================================================
-   9. RESPONSIVE LAYOUT CONSTRAINTS (Adaptive Breakpoints)
-   ========================================================================== */
-@media (max-width: 1024px) {
-    .workspace-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 768px) {
-    .dashboard-layout {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .dashboard-layout > .card {
-        width: 100%;
-    }
-
-    .workspace-grid {
-        grid-template-columns: 1fr;
-    }
+::-webkit-scrollbar-thumb:hover {
+    background: var(--glass-highlight);
 }

@@ -5,122 +5,125 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Artist Collab - Portal</title>
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-   <div class="container">
-    <div id="auth-card" class="card">
-        <h2 id="form-title">Artist Login</h2>
-        <form id="auth-form">
-            <input type="text" id="artist_name" class="reg-field hidden" placeholder="Artist Name">
-            
-            <select id="role_type" class="reg-field hidden" required>
-                <option value="" disabled selected>Select your core role</option>
+    <div class="container">
+        
+        <div id="auth-card" class="card">
+            <h2 id="form-title">Artist Login</h2>
+            <form id="auth-form">
+                <input type="text" id="artist_name" class="reg-field hidden" placeholder="Artist Name">
                 
-                <optgroup label="Vocals & Performance">
-                    <option value="Vocalist">Vocalist / Singer</option>
-                    <option value="Rapper">Rapper / MC</option>
-                    <option value="Backing Vocalist">Backing Vocalist</option>
-                    <option value="Voice Actor">Voice Actor</option>
-                </optgroup>
+                <select id="role_type" class="reg-field hidden" required>
+                    <option value="" disabled selected>Select your core role</option>
+                    
+                    <optgroup label="Vocals & Performance">
+                        <option value="Vocalist">Vocalist / Singer</option>
+                        <option value="Rapper">Rapper / MC</option>
+                        <option value="Backing Vocalist">Backing Vocalist</option>
+                        <option value="Voice Actor">Voice Actor</option>
+                    </optgroup>
 
-                <optgroup label="Production & Composition">
-                    <option value="Producer">Music Producer</option>
-                    <option value="Beatmaker">Beatmaker</option>
-                    <option value="Songwriter">Songwriter / Lyricist</option>
-                    <option value="Composer">Composer (Film/Game)</option>
-                    <option value="Arranger">Arranger</option>
-                </optgroup>
+                    <optgroup label="Production & Composition">
+                        <option value="Producer">Music Producer</option>
+                        <option value="Beatmaker">Beatmaker</option>
+                        <option value="Songwriter">Songwriter / Lyricist</option>
+                        <option value="Composer">Composer (Film/Game)</option>
+                        <option value="Arranger">Arranger</option>
+                    </optgroup>
 
-                <optgroup label="Instruments">
-                    <option value="Drummer">Drummer / Percussionist</option>
-                    <option value="Guitarist">Guitarist (Electric/Acoustic)</option>
-                    <option value="Bass Player">Bass Player</option>
-                    <option value="Keyboardist">Keyboardist / Pianist</option>
-                    <option value="Synthesizer Player">Synth Programmer</option>
-                    <option value="DJ">DJ / Turntablist</option>
-                </optgroup>
+                    <optgroup label="Instruments">
+                        <option value="Drummer">Drummer</option>
+                        <option value="Guitarist">Guitarist</option>
+                        <option value="Bass Player">Bass Player</option>
+                        <option value="Keyboardist">Keyboardist</option>
+                        <option value="Synthesizer Player">Synth Programmer</option>
+                        <option value="DJ">DJ</option>
+                    </optgroup>
 
-                <optgroup label="Studio & Engineering">
-                    <option value="Audio Engineer">Recording Engineer</option>
-                    <option value="Mixing Engineer">Mixing Engineer</option>
-                    <option value="Mastering Engineer">Mastering Engineer</option>
-                    <option value="Sound Designer">Sound Designer</option>
-                </optgroup>
-            </select>
-            
-            <input type="email" id="email" placeholder="Email Address" required>
-            <input type="password" id="password" placeholder="Password" required>
-            <button type="submit" id="submit-btn">Let's Go</button>
-        </form>
-        <p style="margin-top: 1rem;"><span id="toggle-form" class="link">Create an account instead</span></p>
+                    <optgroup label="Studio & Engineering">
+                        <option value="Audio Engineer">Recording Engineer</option>
+                        <option value="Mixing Engineer">Mixing Engineer</option>
+                        <option value="Mastering Engineer">Mastering Engineer</option>
+                        <option value="Sound Designer">Sound Designer</option>
+                    </optgroup>
+                </select>
+                
+                <input type="email" id="email" placeholder="Email Address" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit" id="submit-btn">Let's Go</button>
+            </form>
+            <p style="margin-top: 1.5rem;"><span id="toggle-form" class="link">Create an account instead</span></p>
         </div>
-    </div>
 
         <div id="main-dashboard" class="dashboard-layout hidden">
             
-            <div class="card" style="max-width: 100%; height: max-content;">
-                <h2>Welcome Back, <span id="user-display-name" style="color: #04d361;">Artist</span>!</h2>
-                <p style="color: #a8a8b3; font-size: 0.9rem;">Workspace: <span id="user-tenant" style="color: #8257e5; font-weight:bold;"></span></p>
+            <div class="card">
+                <h2>Welcome Back, <span id="user-display-name" style="color: var(--accent-green);">Artist</span>!</h2>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Workspace: <span id="user-tenant" style="color: var(--accent-purple); font-weight:bold;"></span></p>
                 
-                <div style="background: #121214; padding: 1rem; border-radius: 4px; text-align: left; font-family: monospace; font-size: 0.85rem; word-break: break-all; margin-bottom: 1rem;">
-                    <strong>Your Bio:</strong> <span id="user-bio"></span><br>
-                    <strong>Role:</strong> <span id="user-role"></span>
+                <div style="background: rgba(0,0,0,0.3); padding: 1.25rem; border: 1px solid var(--glass-border); border-radius: 8px; text-align: left; font-size: 0.85rem; line-height: 1.6; word-break: break-all;">
+                    <strong style="color: var(--text-secondary);">Your Bio:</strong> <span id="user-bio" style="color: var(--text-primary);"></span><br>
+                    <strong style="color: var(--text-secondary);">Role:</strong> <span id="user-role" style="color: var(--text-primary);"></span>
                 </div>
 
-                <div style="margin-top: 20px; padding: 15px; border: 1px solid #323238; border-radius: 8px; background: #121214; text-align: left;">
-                    <h3 style="margin-top: 0; color: #04d361; font-size: 1.1rem;">Geospatial Radar</h3>
-                    <p style="color: #a8a8b3; font-size: 0.8rem; margin-bottom: 12px;">Sync location metrics to find nearby partners.</p>
-                    <button id="syncLocationBtn" class="btn-primary" style="padding: 8px 12px; cursor: pointer; background: #04d361; color: #121214; border: none; font-weight: bold; width: 100%; border-radius: 4px;">
+                <div style="padding: 1.25rem; border: 1px solid var(--glass-border); border-radius: 10px; background: rgba(0,0,0,0.2); text-align: left;">
+                    <h3 style="margin-top: 0; color: var(--accent-green); font-size: 1.05rem; font-weight: 600;">Geospatial Radar</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 12px; line-height: 1.4;">Sync location metrics to find nearby partners.</p>
+                    <button id="syncLocationBtn" style="padding: 10px; cursor: pointer; background: var(--accent-green); color: #09090b; font-weight: bold; width: 100%; border-radius: 6px;">
                         Sync Location
                     </button>
-                    <div id="syncStatus" style="margin-top: 8px; font-size: 13px; font-weight: 500;"></div>
+                    <div id="syncStatus" style="margin-top: 8px; font-size: 13px; font-weight: 500; color: var(--text-secondary);"></div>
                 </div>
 
-                <div style="margin-top: 20px; padding: 15px; border: 1px solid #323238; border-radius: 8px; background: #121214; text-align: left;">
-                    <h3 style="margin-top: 0; color: #8257e5; font-size: 1.1rem;">Upload Track Snippet</h3>
-                    <p style="color: #a8a8b3; font-size: 0.8rem; margin-bottom: 12px;">Add your signature preview track file.</p>
+                <div style="padding: 1.25rem; border: 1px solid var(--glass-border); border-radius: 10px; background: rgba(0,0,0,0.2); text-align: left;">
+                    <h3 style="margin-top: 0; color: var(--accent-purple); font-size: 1.05rem; font-weight: 600;">Upload Track Snippet</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 12px; line-height: 1.4;">Add your signature preview track file.</p>
                     <form id="audioUploadForm">
-                        <input type="file" id="portfolioFile" accept="audio/*" required style="display: block; width: 100%; margin-bottom: 12px; color: #a8a8b3; font-size: 0.8rem;" />
-                        <button type="submit" class="btn-primary" style="padding: 8px 12px; cursor: pointer; background: #8257e5; color: white; border: none; font-weight: bold; width: 100%; border-radius: 4px;">
+                        <input type="file" id="portfolioFile" accept="audio/*" required style="display: block; width: 100%; margin-bottom: 12px; color: var(--text-secondary); font-size: 0.8rem;" />
+                        <button type="submit" style="padding: 10px; cursor: pointer; background: var(--accent-purple); color: white; font-weight: bold; width: 100%; border-radius: 6px;">
                             Upload Audio File
                         </button>
                     </form>
-                    <div id="uploadProgressStatus" style="margin-top: 8px; font-size: 13px; font-weight: 500;"></div>
+                    <div id="uploadProgressStatus" style="margin-top: 8px; font-size: 13px; font-weight: 500; color: var(--text-secondary);"></div>
                 </div>
 
-                <div id="signature-track-container" style="margin-bottom: 1rem;"></div>
+                <div id="signature-track-container"></div>
 
-                <button onclick="logout()" style="background: #e1e1e6; color: #121214; margin-top: 20px; width: 100%;">Log Out</button>
+                <button onclick="logout()" style="background: rgba(255, 255, 255, 0.08); color: var(--text-primary); margin-top: auto; width: 100%; border: 1px solid var(--glass-border);">Log Out</button>
             </div>
 
             <div class="workspace-grid">
                 
                 <div class="panel-box">
-                    <h2 style="margin-top: 0; color: #04d361;">Discover Talent</h2>
-                    <p style="color: #a8a8b3; font-size:0.9rem; margin-bottom: 1.5rem;">Find creators sorted by proximity radar.</p>
+                    <h2 style="color: var(--accent-green);">Discover Talent</h2>
+                    <p style="color: var(--text-secondary); font-size:0.9rem;">Find creators sorted by proximity radar.</p>
                     
-                    <div class="filter-bar" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
-                        <input type="text" id="role-search-input" placeholder="Type a role (e.g. rapper, producer)..." style="margin: 0; flex: 1;">
-                        <button onclick="searchProximity(true)" style="margin: 0; padding: 0 1.5rem; background: #04d361; color: #121214; font-weight: bold; width: auto;">Search</button>
+                    <div class="filter-bar" style="display: flex; gap: 0.5rem; width: 100%;">
+                        <input type="text" id="role-search-input" placeholder="Type a role (e.g. rapper, producer)..." style="margin: 0;">
+                        <button onclick="searchProximity(true)" style="margin: 0; padding: 0 1.5rem; background: var(--accent-green); color: #09090b; font-weight: bold; width: auto;">Search</button>
                     </div>
                     
                     <div id="artist-grid" class="artist-grid"></div>
 
-                    <div id="pagination-bar" class="hidden" style="margin-top: 1.5rem; text-align: center; border-top: 1px solid #323238; padding-top: 1rem;">
-                        <button id="next-page-btn" style="background: #8257e5; color: white; width: auto; padding: 0.6rem 2rem; margin: 0;" onclick="searchProximity(false)">Next Page →</button>
+                    <div id="pagination-bar" class="hidden" style="margin-top: auto; text-align: center; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+                        <button id="next-page-btn" style="background: var(--accent-purple); color: white; width: auto; padding: 0.6rem 2rem; margin: 0;" onclick="searchProximity(false)">Next Page →</button>
                     </div>
                 </div> 
 
                 <div class="panel-box">
-                    <h2 style="margin-top: 0; color: #8257e5;">Incoming Requests</h2>
-                    <p style="color: #a8a8b3; font-size:0.9rem; margin-bottom: 1.5rem;">Collaboration offers targeting you.</p>
+                    <h2 style="color: var(--accent-purple);">Incoming Requests</h2>
+                    <p style="color: var(--text-secondary); font-size:0.9rem;">Collaboration offers targeting you.</p>
                     <div id="requests-inbox" class="requests-stack"></div>
                 </div> 
 
                 <div class="panel-box">
-                    <h2 style="margin-top: 0; color: #04d361;">Your Network</h2>
-                    <p style="color: #a8a8b3; font-size:0.9rem; margin-bottom: 1.5rem;">Verified creative partners in this workspace layer.</p>
+                    <h2 style="color: var(--accent-green);">Your Network</h2>
+                    <p style="color: var(--text-secondary); font-size:0.9rem;">Verified creative partners in this workspace layer.</p>
                     <div id="active-connections" class="requests-stack"></div>
                 </div> 
 
