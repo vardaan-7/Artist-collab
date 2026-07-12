@@ -1,9 +1,9 @@
 isLogin = true;
 const apiBase = "/api/v1/marketplace"; 
-const chatApiBase = "/api/v1/chat"; // 🟢 Connected to your new chat router prefix
+const chatApiBase = "/api/v1/chat"; 
 let currentCursor = null;  
-let activeChatArtistId = null; // 🟢 Globally tracks who you are messaging
-let chatPollingInterval = null; // 🟢 Controls short polling loops
+let activeChatArtistId = null; 
+let chatPollingInterval = null; 
 
 document.getElementById('toggle-form').addEventListener('click', () => {
     isLogin = !isLogin;
@@ -45,7 +45,6 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
             bio: "Hey there!"
         };
         
-        // Changed to a relative path here as well
         const response = await fetch(`/api/v1/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -76,24 +75,35 @@ async function loadDashboard() {
         document.getElementById('user-role').innerText = user.role_type;
         document.getElementById('user-tenant').innerText = user.tenant_id;
         
+        // Handle Signature Track Visibility and Control Rules dynamically
         const trackContainer = document.getElementById("signature-track-container");
+        const uploadFormCard = document.getElementById('audioUploadForm') ? document.getElementById('audioUploadForm').parentElement : null;
+        
         if (trackContainer) {
+            trackContainer.innerHTML = "";
+            
             if (user.signature_track) {
+                // If signature track exists, display it and hide the upload interface container
+                if (uploadFormCard) uploadFormCard.style.display = "none";
+                
                 const track = user.signature_track;
                 trackContainer.innerHTML = `
-                    <div style="background: #202024; padding: 1rem; border: 1px solid #323238; border-radius: 4px; text-align: left;">
+                    <div style="background: #202024; padding: 1rem; border: 1px solid #323238; border-radius: 4px; text-align: left; margin-top: 20px;">
                         <p style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: #04d361; font-weight: bold;">
                             📻 Your Signature Track: <span style="color: #ffffff;">${track.title}</span>
                         </p>
                         <audio controls style="width: 100%; height: 32px; outline: none; margin-top: 0.25rem;">
-                            <source src="${track.file_url}" type="${track.mime_type}">
+                            <source src="${track.file_url}" type="${track.mime_type || 'audio/mpeg'}">
                             Your browser does not support the audio element.
                         </audio>
                     </div>
                 `;
             } else {
+                // If no signature track exists, show the upload form element interface cleanly
+                if (uploadFormCard) uploadFormCard.style.display = "block";
+                
                 trackContainer.innerHTML = `
-                    <div style="background: #121214; padding: 1rem; border: 1px dashed #323238; border-radius: 4px; font-size: 0.8rem; color: #a8a8b3; text-align: center;">
+                    <div style="background: #121214; padding: 1rem; border: 1px dashed #323238; border-radius: 4px; font-size: 0.8rem; color: #a8a8b3; text-align: center; margin-top: 20px;">
                         🎵 No signature track uploaded. Drop a snippet to unlock vector matchmaking profile radar!
                     </div>
                 `;
@@ -102,15 +112,56 @@ async function loadDashboard() {
         
         document.getElementById('auth-card').classList.add('hidden');
         document.getElementById('main-dashboard').classList.remove('hidden');
-        
         document.getElementById('artist-grid').innerHTML = `<p style="color: #a8a8b3;">Type an artist role above to map local talent by proximity radar.</p>`;
         
-        // Inject structural Chat HTML Container dynamically at the base of the page layout
         injectChatUIElements();
-
         fetchIncomingRequests();
         fetchActiveConnections(); 
     } else { logout(); }
+}
+
+async function executeAudioUpload(event) {
+    event.preventDefault();
+    
+    const fileInput = document.getElementById('portfolioFile');
+    const statusDiv = document.getElementById('uploadProgressStatus');
+    
+    if (!fileInput || !fileInput.files.length) {
+        if (statusDiv) statusDiv.innerHTML = '<span style="color: red;">Please select an audio file first.</span>';
+        return;
+    }
+
+    const audioFile = fileInput.files[0];
+    const formData = new FormData();
+    formData.append('file', audioFile);
+    formData.append('title', audioFile.name); 
+
+    if (statusDiv) statusDiv.innerHTML = "Uploading track buffer to server storage...";
+
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/v1/media/upload-snippet', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        if (response.ok) {
+            if (statusDiv) statusDiv.innerHTML = '<span style="color: green;">✔ Track deployed successfully to production storage!</span>';
+            fileInput.value = ""; 
+            
+            // Reload the dashboard metrics immediately to render the native player and hide the form container
+            loadDashboard();
+        } else {
+            const err = await response.json();
+            if (statusDiv) statusDiv.innerHTML = `<span style="color: red;">Upload failed: ${err.detail || 'Server rejected track'}</span>`;
+        }
+    } catch (error) {
+        console.error("Audio streaming file upload failure:", error);
+        if (statusDiv) statusDiv.innerHTML = '<span style="color: red;">Network error connecting to media gateway router.</span>';
+    }
 }
 
 async function searchProximity(isNewSearch = true) {
@@ -234,8 +285,6 @@ async function fetchIncomingRequests() {
 
 async function fetchActiveConnections() {
     const token = localStorage.getItem('token');
-    
-    // 🔍 Fetching from our newly deduplicated distinct contacts path
     const response = await fetch(`${chatApiBase}/contacts`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -266,7 +315,6 @@ async function fetchActiveConnections() {
     }
 }
 
-// 🟢 CHAT INTERACTION OVERLAY LOGIC
 function injectChatUIElements() {
     if (document.getElementById('chat-modal')) return;
 
@@ -285,10 +333,8 @@ function injectChatUIElements() {
         <div id="chat-messages" style="flex:1; padding:15px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; background:#121214;"></div>
         
         <form id="chat-submit-form" style="padding:10px; border-top:1px solid #29292e; display:flex !important; flex-direction:row !important; align-items:center !important; gap:8px !important; background:#202024; border-bottom-left-radius:8px; border-bottom-right-radius:8px; width:100% !important; box-sizing:border-box !important;">
-            
             <input type="text" id="chat-input-text" placeholder="Type text..." required autocomplete="off" 
                 style="flex: 1 !important; display: block !important; width: 100% !important; min-width: 0 !important; height: 38px !important; padding: 0 12px !important; background:#121214 !important; border:1px solid #29292e !important; color:white !important; border-radius:4px !important; outline:none !important; box-sizing:border-box !important;">
-            
             <button type="submit" 
                 style="flex-shrink: 0 !important; width: auto !important; height: 38px !important; background:#0070f3 !important; color:white !important; border:none !important; padding:0 20px !important; border-radius:4px !important; cursor:pointer !important; font-weight:bold !important; white-space:nowrap !important; box-sizing:border-box !important;">
                 Send
@@ -312,7 +358,7 @@ function injectChatUIElements() {
 
         if (response.ok) {
             input.value = "";
-            fetchChatTimeline(); // Reload view immediately
+            fetchChatTimeline(); 
         }
     });
 }
@@ -324,7 +370,7 @@ function openChatWindow(artistId, artistName) {
     
     fetchChatTimeline();
     clearInterval(chatPollingInterval);
-    chatPollingInterval = setInterval(fetchChatTimeline, 3000); // 🕒 Poll every 3 seconds
+    chatPollingInterval = setInterval(fetchChatTimeline, 3000); 
 }
 
 function closeChatWindow() {
@@ -368,7 +414,7 @@ async function fetchChatTimeline() {
             bubble.innerText = msg.message_text;
             box.appendChild(bubble);
         });
-        box.scrollTop = box.scrollHeight; // Auto-scroll down
+        box.scrollTop = box.scrollHeight; 
     }
 }
 
@@ -406,7 +452,13 @@ function logout() {
     location.reload();
 }
 
-if(localStorage.getItem('token')) { loadDashboard(); }
+// Event delegation configuration to capture audio upload form submission
+document.addEventListener('submit', (e) => {
+    if (e.target && e.target.id === 'audioUploadForm') {
+        executeAudioUpload(e);
+    }
+});
+
 async function syncArtistLocation() {
     const statusDiv = document.getElementById('syncStatus');
     
@@ -437,7 +489,7 @@ async function syncArtistLocation() {
 
                 if (response.ok) {
                     statusDiv.innerHTML = '<span style="color: green;">✔ Profile location synced successfully!</span>';
-                    if (typeof loadMarketplace === 'function') loadMarketplace();
+                    loadDashboard();
                 } else {
                     const err = await response.json();
                     statusDiv.innerHTML = `<span style="color: red;">Sync failed: ${err.detail || 'Server error'}</span>`;
@@ -460,3 +512,5 @@ document.addEventListener('click', (e) => {
         syncArtistLocation();
     }
 });
+
+if(localStorage.getItem('token')) { loadDashboard(); }
