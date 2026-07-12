@@ -23,12 +23,11 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
         formData.append('username', document.getElementById('email').value);
         formData.append('password', document.getElementById('password').value);
 
-        const response = await fetch(`http://127.0.0.1:8000/api/v1/auth/login`, { method: 'POST', body: formData });
+        const response = await fetch(`/api/v1/auth/login`, { method: 'POST', body: formData });
         if (response.ok) {
             const data = await response.json();
             localStorage.setItem('token', data.access_token);
             
-            // 🟢 Clear the input credentials clean so they aren't left in the DOM caching layer
             document.getElementById('email').value = "";
             document.getElementById('password').value = "";
             
@@ -45,7 +44,9 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
             tenant_id: document.getElementById('tenant_id').value || "tenant_default",
             bio: "Hey there! Ready to jump onto some massive collaborative project tracks."
         };
-        const response = await fetch(`http://127.0.0.1:8000/api/v1/auth/register`, {
+        
+        // Changed to a relative path here as well
+        const response = await fetch(`/api/v1/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
