@@ -19,3 +19,4 @@ redis==7.4.0
 qdrant-client==1.18.0
 PyYAML==6.0.3
 email-validator==2.3.0
+requests==2.34.2
