@@ -59,45 +59,45 @@
 
         <div id="main-dashboard" class="dashboard-layout hidden">
             
-            <div class="card" style="max-width: 100%; height: max-content; margin-bottom: 1.5rem;">
-                <h2>Welcome Back, <span id="user-display-name" style="color: #04d361;">Artist</span>!</h2>
-                <p style="color: #a8a8b3; font-size: 0.9rem;">Workspace: <span id="user-tenant" style="color: #8257e5; font-weight:bold;"></span></p>
-                <div style="background: #121214; padding: 1rem; border-radius: 4px; text-align: left; font-family: monospace; font-size: 0.85rem; word-break: break-all; margin-bottom: 1rem;">
-                    <strong>Your Bio:</strong> <span id="user-bio"></span><br>
-                    <strong>Role:</strong> <span id="user-role"></span>
-                </div>
+            <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 100%; height: max-content;">
                 
-                <div id="signature-track-container" style="margin-top: 10px; margin-bottom: 1rem;"></div>
+                <div class="card" style="margin: 0; width: 100%; box-sizing: border-box;">
+                    <h2>Welcome Back, <span id="user-display-name" style="color: #04d361;">Artist</span>!</h2>
+                    <p style="color: #a8a8b3; font-size: 0.9rem;">Workspace: <span id="user-tenant" style="color: #8257e5; font-weight:bold;"></span></p>
+                    <div style="background: #121214; padding: 1rem; border-radius: 4px; text-align: left; font-family: monospace; font-size: 0.85rem; word-break: break-all; margin-bottom: 1rem;">
+                        <strong>Your Bio:</strong> <span id="user-bio"></span><br>
+                        <strong>Role:</strong> <span id="user-role"></span>
+                    </div>
+                    
+                    <div id="signature-track-container" style="margin-top: 10px; margin-bottom: 0;"></div>
+                </div>
+
+                <div class="card" style="margin: 0; width: 100%; box-sizing: border-box; border: 1px solid #323238; background: #121214;">
+                    <h3 style="margin-top: 0; color: #04d361;">Geospatial Synchronization</h3>
+                    <p style="color: #a8a8b3; font-size: 0.85rem; margin-bottom: 15px;">Keep your marketplace location updated so nearby artists can discover your profile tracks.</p>
+                    <button id="syncLocationBtn" class="btn-primary" style="padding: 10px 15px; cursor: pointer; background: #04d361; color: #121214; border: none; font-weight: bold; width: 100%; border-radius: 4px;">
+                        Sync Current Location
+                    </button>
+                    <div id="syncStatus" style="margin-top: 10px; font-size: 14px; font-weight: 500;"></div>
+                </div>
+
+                <div class="card" style="margin: 0; width: 100%; box-sizing: border-box; border: 1px solid #323238; background: #121214; text-align: left;">
+                    <h3 style="margin-top: 0; color: #8257e5;">Upload Your Track Preview</h3>
+                    <p style="color: #a8a8b3; font-size: 0.85rem; margin-bottom: 12px;">Share a signature sound snippet so potential collaborators can instantly hear your style.</p>
+                    <form id="audioUploadForm">
+                        <input type="file" id="portfolioFile" accept="audio/*" required style="display: block; width: 100%; margin-bottom: 12px; color: #a8a8b3; background: #202024; padding: 8px; border-radius: 4px; border: 1px solid #323238; box-sizing: border-box;" />
+                        <button type="submit" class="btn-primary" style="padding: 10px 15px; cursor: pointer; background: #8257e5; color: white; border: none; font-weight: bold; width: 100%; border-radius: 4px;">
+                            Upload Snippet Track
+                        </button>
+                    </form>
+                    <div id="uploadProgressStatus" style="margin-top: 10px; font-size: 14px; font-weight: 500;"></div>
+                </div>
+
                 <button onclick="logout()" style="background: #e1e1e6; color: #121214; margin: 0; width: 100%;">Log Out</button>
             </div>
 
-            <div class="workspace-grid">
+            <div class="workspace-grid" style="margin-top: 0;">
                 
-                <div class="panel-box" style="grid-column: span 3; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; background: transparent; padding: 0; border: none; box-shadow: none;">
-                    
-                    <div style="padding: 1.5rem; border: 1px solid #323238; border-radius: 8px; background: #121214; text-align: left;">
-                        <h3 style="margin-top: 0; color: #04d361;">Geospatial Synchronization</h3>
-                        <p style="color: #a8a8b3; font-size: 0.85rem; margin-bottom: 15px;">Keep your marketplace location updated so nearby artists can discover your profile tracks.</p>
-                        <button id="syncLocationBtn" class="btn-primary" style="padding: 10px 15px; cursor: pointer; background: #04d361; color: #121214; border: none; font-weight: bold; width: 100%; border-radius: 4px;">
-                            Sync Current Location
-                        </button>
-                        <div id="syncStatus" style="margin-top: 10px; font-size: 14px; font-weight: 500;"></div>
-                    </div>
-
-                    <div style="padding: 1.5rem; border: 1px solid #323238; border-radius: 8px; background: #121214; text-align: left;">
-                        <h3 style="margin-top: 0; color: #8257e5;">Upload Your Track Preview</h3>
-                        <p style="color: #a8a8b3; font-size: 0.85rem; margin-bottom: 12px;">Share a signature sound snippet so potential collaborators can instantly hear your style.</p>
-                        <form id="audioUploadForm">
-                            <input type="file" id="portfolioFile" accept="audio/*" required style="display: block; width: 100%; margin-bottom: 12px; color: #a8a8b3; background: #202024; padding: 8px; border-radius: 4px; border: 1px solid #323238; box-sizing: border-box;" />
-                            <button type="submit" class="btn-primary" style="padding: 10px 15px; cursor: pointer; background: #8257e5; color: white; border: none; font-weight: bold; width: 100%; border-radius: 4px;">
-                                Upload Snippet Track
-                            </button>
-                        </form>
-                        <div id="uploadProgressStatus" style="margin-top: 10px; font-size: 14px; font-weight: 500;"></div>
-                    </div>
-
-                </div>
-
                 <div class="panel-box">
                     <h2 style="margin-top: 0; color: #04d361;">Discover Talent</h2>
                     <p style="color: #a8a8b3; font-size:0.9rem; margin-bottom: 1.5rem;">Find creators sorted by proximity radar.</p>
