@@ -57,11 +57,11 @@
         </div>
     </div>
 
-        <div id="main-dashboard" class="dashboard-layout hidden">
+        <div id="main-dashboard" class="dashboard-layout hidden" style="display: flex !important; flex-direction: row !important; gap: 2rem !important; width: 100% !important; max-width: 1200px; margin: 0 auto; align-items: flex-start !important; justify-content: center !important;">
             
-            <div style="display: flex; flex-direction: column; gap: 1.5rem; max-width: 100%; height: max-content;">
+            <div style="flex-shrink: 0 !important; width: 320px !important; display: flex !important; flex-direction: column !important; gap: 1.5rem !important; height: max-content !important; box-sizing: border-box !important;">
                 
-                <div class="card" style="margin: 0; width: 100%; box-sizing: border-box;">
+                <div class="card" style="margin: 0 !important; width: 100% !important; box-sizing: border-box !important;">
                     <h2>Welcome Back, <span id="user-display-name" style="color: #04d361;">Artist</span>!</h2>
                     <p style="color: #a8a8b3; font-size: 0.9rem;">Workspace: <span id="user-tenant" style="color: #8257e5; font-weight:bold;"></span></p>
                     <div style="background: #121214; padding: 1rem; border-radius: 4px; text-align: left; font-family: monospace; font-size: 0.85rem; word-break: break-all; margin-bottom: 1rem;">
@@ -72,7 +72,7 @@
                     <div id="signature-track-container" style="margin-top: 10px; margin-bottom: 0;"></div>
                 </div>
 
-                <div class="card" style="margin: 0; width: 100%; box-sizing: border-box; border: 1px solid #323238; background: #121214;">
+                <div class="card" style="margin: 0 !important; width: 100% !important; box-sizing: border-box !important; border: 1px solid #323238 !important; background: #121214 !important;">
                     <h3 style="margin-top: 0; color: #04d361;">Geospatial Synchronization</h3>
                     <p style="color: #a8a8b3; font-size: 0.85rem; margin-bottom: 15px;">Keep your marketplace location updated so nearby artists can discover your profile tracks.</p>
                     <button id="syncLocationBtn" class="btn-primary" style="padding: 10px 15px; cursor: pointer; background: #04d361; color: #121214; border: none; font-weight: bold; width: 100%; border-radius: 4px;">
@@ -81,7 +81,7 @@
                     <div id="syncStatus" style="margin-top: 10px; font-size: 14px; font-weight: 500;"></div>
                 </div>
 
-                <div class="card" style="margin: 0; width: 100%; box-sizing: border-box; border: 1px solid #323238; background: #121214; text-align: left;">
+                <div class="card" style="margin: 0 !important; width: 100% !important; box-sizing: border-box !important; border: 1px solid #323238 !important; background: #121214 !important; text-align: left;">
                     <h3 style="margin-top: 0; color: #8257e5;">Upload Your Track Preview</h3>
                     <p style="color: #a8a8b3; font-size: 0.85rem; margin-bottom: 12px;">Share a signature sound snippet so potential collaborators can instantly hear your style.</p>
                     <form id="audioUploadForm">
@@ -96,9 +96,9 @@
                 <button onclick="logout()" style="background: #e1e1e6; color: #121214; margin: 0; width: 100%;">Log Out</button>
             </div>
 
-            <div class="workspace-grid" style="margin-top: 0;">
+            <div class="workspace-grid" style="flex: 1 !important; margin-top: 0 !important; display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 1.5rem !important; box-sizing: border-box !important;">
                 
-                <div class="panel-box">
+                <div class="panel-box" style="margin: 0 !important;">
                     <h2 style="margin-top: 0; color: #04d361;">Discover Talent</h2>
                     <p style="color: #a8a8b3; font-size:0.9rem; margin-bottom: 1.5rem;">Find creators sorted by proximity radar.</p>
                     
@@ -114,13 +114,13 @@
                     </div>
                 </div> 
 
-                <div class="panel-box">
+                <div class="panel-box" style="margin: 0 !important;">
                     <h2 style="margin-top: 0; color: #8257e5;">Incoming Requests</h2>
                     <p style="color: #a8a8b3; font-size:0.9rem; margin-bottom: 1.5rem;">Collaboration offers targeting you.</p>
                     <div id="requests-inbox" class="requests-stack"></div>
                 </div> 
 
-                <div class="panel-box">
+                <div class="panel-box" style="margin: 0 !important;">
                     <h2 style="margin-top: 0; color: #04d361;">Your Network</h2>
                     <p style="color: #a8a8b3; font-size:0.9rem; margin-bottom: 1.5rem;">Verified creative partners in this workspace layer.</p>
                     <div id="active-connections" class="requests-stack"></div>
