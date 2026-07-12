@@ -51,6 +51,12 @@ app.include_router(chat.router, prefix="/api/v1")
 # Mount the static directory to serve assets, CSS, or JS files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# PRODUCTION FILESYSTEM STORAGE ROUTE (For Render Deployment)
+# This exposes the local container folder so the frontend can stream audio uploaded files
+if os.getenv("RENDER", "false").lower() == "true":
+    os.makedirs("static_uploads", exist_ok=True)
+    app.mount("/static/uploads", StaticFiles(directory="static_uploads"), name="production_uploads")
+
 # Serve the main single-page application interface for the artist portal
 @app.get("/", tags=["Frontend"])
 def read_index():
@@ -62,5 +68,5 @@ def root_health_check():
     return {
         "status": "online",
         "message": f"Welcome to the {settings.PROJECT_NAME} API Engine Gateway.",
-        "environment": "development"
+        "environment": "production" if os.getenv("RENDER", "false").lower() == "true" else "development"
     }
