@@ -240,3 +240,73 @@ button {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--glass-highlight);
 }
+/* ==========================================
+   MOBILE & TABLET RESPONSIVE ADAPTATION 
+   ========================================== */
+
+@media (max-width: 1024px) {
+    body {
+        overflow-y: auto; /* Enable page scrolling on smaller viewports */
+        padding: 1rem 0;
+    }
+
+    /* Remove the rigid full-screen container constraints */
+    .container {
+        width: 95vw;
+        height: auto;
+        min-height: 94vh;
+        overflow-y: auto;
+    }
+
+    /* Convert the 2-column layout into a single, fluid column stack */
+    .dashboard-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow-y: visible;
+    }
+
+    /* Convert the left sidebar profile section into a fluid top header block */
+    .dashboard-layout > .card {
+        border-right: none !important;
+        border-bottom: 1px solid var(--glass-border) !important;
+        height: auto !important;
+        border-radius: 20px 20px 0 0 !important;
+        padding: 1.5rem !important;
+    }
+
+    .dashboard-layout > .card button {
+        margin-top: 1rem !important;
+    }
+
+    /* Unroll the workspace grid into a single-column block stack */
+    .workspace-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        padding: 1.25rem;
+        overflow-y: visible;
+    }
+
+    /* Cancel out the double-row span property for the Discover block */
+    .panel-box:nth-child(1) {
+        grid-row: span 1;
+    }
+}
+
+@media (max-width: 480px) {
+    .card {
+        padding: 1.5rem;
+    }
+
+    .panel-box {
+        padding: 1.25rem;
+    }
+
+    /* Make search fields and action buttons span full width for easy touch access */
+    .filter-bar {
+        flex-direction: column;
+    }
+
+    .filter-bar button {
+        width: 100% !important;
+    }
+}
