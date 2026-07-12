@@ -8,23 +8,54 @@
 </head>
 <body>
 
-    <div class="container">
-        <div id="auth-card" class="card">
-            <h2 id="form-title">Artist Login</h2>
-            <form id="auth-form">
-                <input type="text" id="artist_name" class="reg-field hidden" placeholder="Artist Name">
-                <select id="role_type" class="reg-field hidden">
-                    <option value="producer">Producer</option>
-                    <option value="vocalist">Vocalist</option>
-                    <option value="designer">Digital Artist</option>
-                </select>
-                <input type="text" id="tenant_id" class="reg-field hidden" placeholder="Tenant ID (e.g. tenant_default)">
-                <input type="email" id="email" placeholder="Email Address" required>
-                <input type="password" id="password" placeholder="Password" required>
-                <button type="submit" id="submit-btn">Let's Go</button>
-            </form>
-            <p style="margin-top: 1rem;"><span id="toggle-form" class="link">Create an account instead</span></p>
+   <div class="container">
+    <div id="auth-card" class="card">
+        <h2 id="form-title">Artist Login</h2>
+        <form id="auth-form">
+            <input type="text" id="artist_name" class="reg-field hidden" placeholder="Artist Name">
+            
+            <select id="role_type" class="reg-field hidden" required>
+                <option value="" disabled selected>Select your core role</option>
+                
+                <optgroup label="Vocals & Performance">
+                    <option value="Vocalist">Vocalist / Singer</option>
+                    <option value="Rapper">Rapper / MC</option>
+                    <option value="Backing Vocalist">Backing Vocalist</option>
+                    <option value="Voice Actor">Voice Actor</option>
+                </optgroup>
+
+                <optgroup label="Production & Composition">
+                    <option value="Producer">Music Producer</option>
+                    <option value="Beatmaker">Beatmaker</option>
+                    <option value="Songwriter">Songwriter / Lyricist</option>
+                    <option value="Composer">Composer (Film/Game)</option>
+                    <option value="Arranger">Arranger</option>
+                </optgroup>
+
+                <optgroup label="Instruments">
+                    <option value="Drummer">Drummer / Percussionist</option>
+                    <option value="Guitarist">Guitarist (Electric/Acoustic)</option>
+                    <option value="Bass Player">Bass Player</option>
+                    <option value="Keyboardist">Keyboardist / Pianist</option>
+                    <option value="Synthesizer Player">Synth Programmer</option>
+                    <option value="DJ">DJ / Turntablist</option>
+                </optgroup>
+
+                <optgroup label="Studio & Engineering">
+                    <option value="Audio Engineer">Recording Engineer</option>
+                    <option value="Mixing Engineer">Mixing Engineer</option>
+                    <option value="Mastering Engineer">Mastering Engineer</option>
+                    <option value="Sound Designer">Sound Designer</option>
+                </optgroup>
+            </select>
+            
+            <input type="email" id="email" placeholder="Email Address" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit" id="submit-btn">Let's Go</button>
+        </form>
+        <p style="margin-top: 1rem;"><span id="toggle-form" class="link">Create an account instead</span></p>
         </div>
+    </div>
 
         <div id="main-dashboard" class="dashboard-layout hidden">
             
@@ -35,18 +66,31 @@
                     <strong>Your Bio:</strong> <span id="user-bio"></span><br>
                     <strong>Role:</strong> <span id="user-role"></span>
                 </div>
-                <div class="profile-settings-card" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
-                    <h3>Geospatial Synchronization</h3>
-                    <p>Keep your marketplace location updated so nearby artists can discover your profile tracks.</p>
-                    <button id="syncLocationBtn" class="btn-primary" style="padding: 10px 15px; cursor: pointer;">
+                
+                <div class="profile-settings-card" style="margin-top: 20px; padding: 15px; border: 1px solid #323238; border-radius: 8px; background: #121214;">
+                    <h3 style="margin-top: 0;">Geospatial Synchronization</h3>
+                    <p style="color: #a8a8b3; font-size: 0.85rem;">Keep your marketplace location updated so nearby artists can discover your profile tracks.</p>
+                    <button id="syncLocationBtn" class="btn-primary" style="padding: 10px 15px; cursor: pointer; background: #04d361; color: #121214; border: none; font-weight: bold; width: 100%;">
                         Sync Current Location
                     </button>
                     <div id="syncStatus" style="margin-top: 10px; font-size: 14px; font-weight: 500;"></div>
                 </div>
 
-                <div id="signature-track-container" style="margin-bottom: 1rem;"></div>
+                <div class="profile-settings-card" style="margin-top: 20px; padding: 15px; border: 1px solid #323238; border-radius: 8px; background: #121214; text-align: left;">
+                    <h3 style="margin-top: 0; color: #8257e5;">Upload Your Track Preview</h3>
+                    <p style="color: #a8a8b3; font-size: 0.85rem; margin-bottom: 12px;">Share a signature sound snippet so potential collaborators can instantly hear your style.</p>
+                    <form id="audioUploadForm">
+                        <input type="file" id="portfolioFile" accept="audio/*" required style="display: block; width: 100%; margin-bottom: 12px; color: #a8a8b3; background: #202024; padding: 8px; border-radius: 4px; border: 1px solid #323238;" />
+                        <button type="submit" class="btn-primary" style="padding: 10px 15px; cursor: pointer; background: #8257e5; color: white; border: none; font-weight: bold; width: 100%;">
+                            Upload Snippet Track
+                        </button>
+                    </form>
+                    <div id="uploadProgressStatus" style="margin-top: 10px; font-size: 14px; font-weight: 500;"></div>
+                </div>
 
-                <button onclick="logout()" style="background: #e1e1e6; color: #121214; margin: 0; width: 100%;">Log Out</button>
+                <div id="signature-track-container" style="margin-top: 20px; margin-bottom: 1rem;"></div>
+
+                <button onclick="logout()" style="background: #e1e1e6; color: #121214; margin-top: 20px; width: 100%;">Log Out</button>
             </div>
 
             <div class="workspace-grid">

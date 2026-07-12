@@ -41,8 +41,8 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
             password: document.getElementById('password').value,
             artist_name: document.getElementById('artist_name').value,
             role_type: document.getElementById('role_type').value,
-            tenant_id: document.getElementById('tenant_id').value || "tenant_default",
-            bio: "Hey there! Ready to jump onto some massive collaborative project tracks."
+            tenant_id: "tenant_default",
+            bio: "Hey there!"
         };
         
         // Changed to a relative path here as well
