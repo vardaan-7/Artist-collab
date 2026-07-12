@@ -407,3 +407,56 @@ function logout() {
 }
 
 if(localStorage.getItem('token')) { loadDashboard(); }
+async function syncArtistLocation() {
+    const statusDiv = document.getElementById('syncStatus');
+    
+    if (!navigator.geolocation) {
+        statusDiv.innerHTML = '<span style="color: red;">Your browser does not support geolocation metrics.</span>';
+        return;
+    }
+
+    statusDiv.innerHTML = "Requesting device permission...";
+
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            
+            statusDiv.innerHTML = `Coordinates captured (${lat.toFixed(4)}, ${lon.toFixed(4)}). Syncing cloud profile...`;
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/v1/auth/update-location', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ latitude: lat, longitude: lon })
+                });
+
+                if (response.ok) {
+                    statusDiv.innerHTML = '<span style="color: green;">✔ Profile location synced successfully!</span>';
+                    if (typeof loadMarketplace === 'function') loadMarketplace();
+                } else {
+                    const err = await response.json();
+                    statusDiv.innerHTML = `<span style="color: red;">Sync failed: ${err.detail || 'Server error'}</span>`;
+                }
+            } catch (error) {
+                console.error("Location sync error:", error);
+                statusDiv.innerHTML = '<span style="color: red;">Network failure connecting to profile router.</span>';
+            }
+        },
+        (error) => {
+            console.error("Geolocation error callback:", error);
+            statusDiv.innerHTML = '<span style="color: red;">Permission denied or location retrieval timed out.</span>';
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
+}
+
+document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'syncLocationBtn') {
+        syncArtistLocation();
+    }
+});
