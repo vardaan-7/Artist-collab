@@ -1,6 +1,6 @@
 isLogin = true;
-const apiBase = "http://127.0.0.1:8000/api/v1/marketplace"; 
-const chatApiBase = "http://127.0.0.1:8000/api/v1/chat"; // 🟢 Connected to your new chat router prefix
+const apiBase = "/api/v1/marketplace"; 
+const chatApiBase = "/api/v1/chat"; // 🟢 Connected to your new chat router prefix
 let currentCursor = null;  
 let activeChatArtistId = null; // 🟢 Globally tracks who you are messaging
 let chatPollingInterval = null; // 🟢 Controls short polling loops
@@ -64,7 +64,7 @@ async function loadDashboard() {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const response = await fetch(`http://127.0.0.1:8000/api/v1/auth/me`, {
+    const response = await fetch(`/api/v1/auth/me`,{
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
