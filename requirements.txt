@@ -51,6 +51,7 @@ pooch==1.9.0
 portalocker==3.2.0
 protobuf==7.35.1
 psycopg==3.3.4
+psycopg2-binary==2.9.9
 psycopg-binary==3.3.4
 psycopg2-binary==2.9.12
 pyasn1==0.6.3
