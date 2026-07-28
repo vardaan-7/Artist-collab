@@ -80,7 +80,13 @@ class StorageService:
         except NoCredentialsError:
             raise RuntimeWarning("Storage Credentials missing or invalid.")
         except ClientError as e:
-            raise RuntimeWarning(f"Storage Engine Communication breakdown: {str(e)}")
+            # 💡 CRUCIAL DEBUG LOG: This exposes the hidden error dictionary to your Render console!
+            print(f"❌ SUPABASE CRASH LOG: {e.response}")
+            
+            error_code = e.response.get('Error', {}).get('Code', 'Unknown')
+            error_message = e.response.get('Error', {}).get('Message', 'No message provided')
+            
+            raise RuntimeWarning(f"Storage Engine Communication breakdown: [{error_code}] {error_message}")
         finally:
             # Reset the file pointer back to the beginning just to be safe
             await file.seek(0)
