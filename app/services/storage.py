@@ -69,10 +69,13 @@ class StorageService:
 
             # 4. Construct the public streaming URL string
             if self.is_production:
-                # Format URL specifically for Supabase download delivery
-                # Syntax: https://[project-id].supabase.co/storage/v1/object/public/[bucket-name]/[filename]
-                project_url = os.getenv("AWS_ENDPOINT_URL").replace(".storage.supabase.co/storage/v1/s3", ".supabase.co")
-                return f"{project_url}/storage/v1/object/public/{self.bucket_name}/{unique_filename}"
+                # Extract the project reference ID safely from the endpoint URL
+                # Splits 'https://vwydmlwfnkddekchurev.storage.supabase.co...' to get 'vwydmlwfnkddekchurev'
+                endpoint = os.getenv("AWS_ENDPOINT_URL", "")
+                project_id = endpoint.split("//")[1].split(".")[0]
+                
+                # Direct, un-intercepted public URL format for Supabase Storage
+                return f"https://{project_id}.supabase.co/storage/v1/object/public/{self.bucket_name}/{unique_filename}"
             else:
                 # Local fallback URL for your machine's MinIO server container
                 return f"{settings.STORAGE_ENDPOINT_URL}/{self.bucket_name}/{unique_filename}"
