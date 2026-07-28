@@ -21,7 +21,11 @@ class StorageService:
                 aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
                 aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
                 region_name=os.getenv("AWS_REGION", "us-east-1"),
-                config=Config(s3={"addressing_style": "path"}) 
+                config=Config(
+                    signature_version='s3v4',                  # ⚠️ Explicitly enforce V4 signing
+                    s3={'addressing_style': 'path'},           # ⚠️ Required for Supabase routes
+                    retries={'max_attempts': 3, 'mode': 'standard'}
+                )
             )
         else:
             print("💻 Local Environment Detected: Initializing MinIO connection setup.")
