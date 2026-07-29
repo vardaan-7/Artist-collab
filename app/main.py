@@ -25,7 +25,7 @@ app = FastAPI(
     redoc_url="/redoc"      # Alternative ReDoc documentation endpoint path
 )
 
-# Mount Security CORS Middleware Guard Filters
+# Mount Security CORS Middleware Guard Filtersg
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],    # In production, swap "*" for your exact domain names

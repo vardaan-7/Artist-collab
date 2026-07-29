@@ -45,14 +45,13 @@ async def upload_audio_snippet(
             detail=f"Storage engine pipeline failure: {str(e)}"
         )
 
-    # 4. Create the Database Record using the authenticated user ID and tenant ID
+    # 4. Create the Database Record using the authenticated user ID
     new_media = MediaPortfolio(
         user_id=current_user.id,
         title=title,
         file_type="audio",
         file_url=saved_file_url,
         mime_type=file.content_type,
-        tenant_id=current_user.tenant_id,
         niche_tags=[] 
     )
 
