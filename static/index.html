@@ -102,12 +102,47 @@
                 <div class="panel-box">
                     <h2 style="color: var(--accent-green);">Discover Talent</h2>
                     <p style="color: var(--text-secondary); font-size:0.9rem;">Find creators sorted by proximity radar.</p>
-                    
+
                     <div class="filter-bar" style="display: flex; gap: 0.5rem; width: 100%;">
-                        <input type="text" id="role-search-input" placeholder="Type a role (e.g. rapper, producer)..." style="margin: 0;">
+                        <!-- 🎯 Dropdown menu replacing the old input box -->
+                        <select id="role-search-input" style="margin: 0; padding: 0.5rem 1rem; border-radius: 8px; flex: 1; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);">
+                            <option value="" selected>All Core Roles</option>
+                            
+                            <optgroup label="Vocals & Performance">
+                                <option value="Vocalist">Vocalist / Singer</option>
+                                <option value="Rapper">Rapper / MC</option>
+                                <option value="Backing Vocalist">Backing Vocalist</option>
+                                <option value="Voice Actor">Voice Actor</option>
+                            </optgroup>
+
+                            <optgroup label="Production & Composition">
+                                <option value="Producer">Music Producer</option>
+                                <option value="Beatmaker">Beatmaker</option>
+                                <option value="Songwriter">Songwriter / Lyricist</option>
+                                <option value="Composer">Composer (Film/Game)</option>
+                                <option value="Arranger">Arranger</option>
+                            </optgroup>
+
+                            <optgroup label="Instruments">
+                                <option value="Drummer">Drummer</option>
+                                <option value="Guitarist">Guitarist</option>
+                                <option value="Bass Player">Bass Player</option>
+                                <option value="Keyboardist">Keyboardist</option>
+                                <option value="Synthesizer Player">Synth Programmer</option>
+                                <option value="DJ">DJ</option>
+                            </optgroup>
+
+                            <optgroup label="Studio & Engineering">
+                                <option value="Audio Engineer">Recording Engineer</option>
+                                <option value="Mixing Engineer">Mixing Engineer</option>
+                                <option value="Mastering Engineer">Mastering Engineer</option>
+                                <option value="Sound Designer">Sound Designer</option>
+                            </optgroup>
+                        </select>
+                        
                         <button onclick="searchProximity(true)" style="margin: 0; padding: 0 1.5rem; background: var(--accent-green); color: #09090b; font-weight: bold; width: auto;">Search</button>
                     </div>
-                    
+
                     <div id="artist-grid" class="artist-grid"></div>
 
                     <div id="pagination-bar" class="hidden" style="margin-top: auto; text-align: center; border-top: 1px solid var(--glass-border); padding-top: 1rem;">

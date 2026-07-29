@@ -166,7 +166,8 @@ async function executeAudioUpload(event) {
 
 async function searchProximity(isNewSearch = true) {
     const token = localStorage.getItem('token');
-    const targetRole = document.getElementById('role-search-input').value.trim();
+    const selectedRole = document.getElementById('role-search-input').value;
+    const targetRole = selectedRole ? selectedRole.trim() : "";
     const grid = document.getElementById('artist-grid');
     const paginationBar = document.getElementById('pagination-bar');
 
