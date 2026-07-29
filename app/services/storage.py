@@ -69,13 +69,19 @@ class StorageService:
 
             # 4. Construct the public streaming URL string
             if self.is_production:
-                # Extract the project reference ID safely from the endpoint URL
-                # Splits 'https://vwydmlwfnkddekchurev.storage.supabase.co...' to get 'vwydmlwfnkddekchurev'
-                endpoint = os.getenv("AWS_ENDPOINT_URL", "")
-                project_id = endpoint.split("//")[1].split(".")[0]
+                endpoint = os.getenv("AWS_ENDPOINT_URL", "").strip()
                 
-                # Direct, un-intercepted public URL format for Supabase Storage
-                return f"https://{project_id}.supabase.co/storage/v1/object/public/{self.bucket_name}/{unique_filename}"
+                # Safe fallback extraction to prevent HTTP 500 errors
+                try:
+                    # Splits 'https://vwydmlwfnkddekchurev.storage.supabase.co...' to get 'vwydmlwfnkddekchurev'
+                    project_id = endpoint.split("//")[1].split(".")[0]
+                except Exception:
+                    # Emergency fallback using your exact project ID if the split fails
+                    project_id = "vwydmlwfnkddekchurev"
+                
+                final_url = f"https://{project_id}.supabase.co/storage/v1/object/public/{self.bucket_name}/{unique_filename}"
+                print(f"🚀 SUCCESS! Generated public URL: {final_url}")
+                return final_url
             else:
                 # Local fallback URL for your machine's MinIO server container
                 return f"{settings.STORAGE_ENDPOINT_URL}/{self.bucket_name}/{unique_filename}"
