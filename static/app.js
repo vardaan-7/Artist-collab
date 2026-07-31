@@ -7,8 +7,8 @@ let chatPollingInterval = null;
 
 document.getElementById('toggle-form').addEventListener('click', () => {
     isLogin = !isLogin;
-    document.getElementById('form-title').innerText = isLogin ? "Artist Login" : "Register Account";
-    document.getElementById('toggle-form').innerText = isLogin ? "Create an account instead" : "Already have an account? Login";
+    document.getElementById('form-title').innerText = isLogin ? "Welcome back" : "Create your profile";
+    document.getElementById('toggle-form').innerText = isLogin ? "New here? Create an account" : "Already have an account? Log in";
     document.getElementById('email').value = "";
     document.getElementById('password').value = "";
     if(document.getElementById('artist_name')) document.getElementById('artist_name').value = "";
@@ -33,7 +33,7 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
             
             loadDashboard();
         } else { 
-            alert("Login failed. Check credentials."); 
+            alert("Login failed — check your email and password."); 
         }
     } else {
         const payload = {
@@ -51,10 +51,10 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
             body: JSON.stringify(payload)
         });
         if (response.ok) { 
-            alert("Registration complete! Go ahead and log in."); 
+            alert("You're in! Log in to get started."); 
             location.reload(); 
         } else { 
-            alert("Registration failed."); 
+            alert("Registration failed. Please try again."); 
         }
     }
 });
@@ -88,11 +88,9 @@ async function loadDashboard() {
                 
                 const track = user.signature_track;
                 trackContainer.innerHTML = `
-                    <div style="background: #202024; padding: 1rem; border: 1px solid #323238; border-radius: 4px; text-align: left; margin-top: 20px;">
-                        <p style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: #04d361; font-weight: bold;">
-                            📻 Your Signature Track: <span style="color: #ffffff;">${track.title}</span>
-                        </p>
-                        <audio controls style="width: 100%; height: 32px; outline: none; margin-top: 0.25rem;">
+                    <div class="track-card">
+                        <p class="track-label">🎧 Your track: <span style="color: var(--text);">${track.title}</span></p>
+                        <audio controls>
                             <source src="${track.file_url}" type="${track.mime_type || 'audio/mpeg'}">
                             Your browser does not support the audio element.
                         </audio>
@@ -103,8 +101,8 @@ async function loadDashboard() {
                 if (uploadFormCard) uploadFormCard.style.display = "block";
                 
                 trackContainer.innerHTML = `
-                    <div style="background: #121214; padding: 1rem; border: 1px dashed #323238; border-radius: 4px; font-size: 0.8rem; color: #a8a8b3; text-align: center; margin-top: 20px;">
-                        🎵 No signature track uploaded. Drop a snippet to unlock vector matchmaking profile radar!
+                    <div class="track-empty">
+                        🎵 No track yet — add a snippet so nearby artists can hear what you sound like.
                     </div>
                 `;
             }
@@ -112,7 +110,7 @@ async function loadDashboard() {
         
         document.getElementById('auth-card').classList.add('hidden');
         document.getElementById('main-dashboard').classList.remove('hidden');
-        document.getElementById('artist-grid').innerHTML = `<p style="color: #a8a8b3;">Type an artist role above to map local talent by proximity radar.</p>`;
+        document.getElementById('artist-grid').innerHTML = `<p class="empty-note">Pick a role above to see who's playing nearby.</p>`;
         
         injectChatUIElements();
         fetchIncomingRequests();
@@ -127,7 +125,7 @@ async function executeAudioUpload(event) {
     const statusDiv = document.getElementById('uploadProgressStatus');
     
     if (!fileInput || !fileInput.files.length) {
-        if (statusDiv) statusDiv.innerHTML = '<span style="color: red;">Please select an audio file first.</span>';
+        if (statusDiv) statusDiv.innerHTML = '<span class="status-err">Please select an audio file first.</span>';
         return;
     }
 
@@ -136,7 +134,7 @@ async function executeAudioUpload(event) {
     formData.append('file', audioFile);
     formData.append('title', audioFile.name); 
 
-    if (statusDiv) statusDiv.innerHTML = "Uploading track buffer to server storage...";
+    if (statusDiv) statusDiv.innerHTML = "Uploading track...";
 
     try {
         const token = localStorage.getItem('token');
@@ -149,18 +147,18 @@ async function executeAudioUpload(event) {
         });
 
         if (response.ok) {
-            if (statusDiv) statusDiv.innerHTML = '<span style="color: green;">✔ Track deployed successfully to production storage!</span>';
+            if (statusDiv) statusDiv.innerHTML = '<span class="status-ok">✔ Track added to your profile.</span>';
             fileInput.value = ""; 
             
             // Reload the dashboard metrics immediately to render the native player and hide the form container
             loadDashboard();
         } else {
             const err = await response.json();
-            if (statusDiv) statusDiv.innerHTML = `<span style="color: red;">Upload failed: ${err.detail || 'Server rejected track'}</span>`;
+            if (statusDiv) statusDiv.innerHTML = `<span class="status-err">Upload failed: ${err.detail || 'Server rejected track'}</span>`;
         }
     } catch (error) {
         console.error("Audio streaming file upload failure:", error);
-        if (statusDiv) statusDiv.innerHTML = '<span style="color: red;">Network error connecting to media gateway router.</span>';
+        if (statusDiv) statusDiv.innerHTML = '<span class="status-err">Network error — check your connection and try again.</span>';
     }
 }
 
@@ -172,13 +170,13 @@ async function searchProximity(isNewSearch = true) {
     const paginationBar = document.getElementById('pagination-bar');
 
     if (!targetRole) {
-        alert("Please specify a role type to look up nearby talent!");
+        alert("Pick a role to search for nearby talent.");
         return;
     }
 
     if (isNewSearch) {
         currentCursor = null;
-        grid.innerHTML = '<p style="color: #a8a8b3;">Scanning local workspace radar coordinates...</p>';
+        grid.innerHTML = '<p class="empty-note">Scanning nearby artists…</p>';
     }
 
     let url = `${apiBase}/discover?role_type=${encodeURIComponent(targetRole)}&limit=10`;
@@ -194,7 +192,7 @@ async function searchProximity(isNewSearch = true) {
         });
         
         if (response.status === 429) {
-            alert("⚠️ Rate limit reached! Slow down your talent search!");
+            alert("You're searching a bit fast — give it a moment and try again.");
             return;
         }
 
@@ -208,7 +206,7 @@ async function searchProximity(isNewSearch = true) {
             if (isNewSearch) grid.innerHTML = '';
 
             if (artists.length === 0 && isNewSearch) {
-                grid.innerHTML = `<p style="color: #a8a8b3;">No creators matching "${targetRole}" located inside this cluster layer.</p>`;
+                grid.innerHTML = `<p class="empty-note">No "${targetRole}" nearby yet — try a different role or check back later.</p>`;
                 paginationBar.classList.add('hidden');
                 return;
             }
@@ -218,16 +216,14 @@ async function searchProximity(isNewSearch = true) {
                 el.className = 'artist-card';
                 el.innerHTML = `
                     <div>
-                        <div style="display: flex; justify-content: space-between; align-items: start;">
-                            <strong style="font-size: 1.1rem; color: #fff;">${artist.artist_name}</strong>
-                            <span style="font-size: 0.8rem; color: #04d361; font-weight: bold; background: #121214; padding: 0.2rem 0.5rem; border-radius: 4px;">
-                                📍 ${artist.distance_km} km away
-                            </span>
+                        <div class="artist-card-top">
+                            <span class="artist-name">${artist.artist_name}</span>
+                            <span class="chip-distance">📍 ${artist.distance_km} km away</span>
                         </div>
                         <span class="artist-role">${artist.role_type.toUpperCase()}</span>
-                        <div class="artist-bio">${artist.bio || 'No bio cataloged.'}</div>
+                        <div class="artist-bio">${artist.bio || 'No bio yet.'}</div>
                     </div>
-                    <button class="connect-btn" onclick="sendConnectRequest(${artist.id})">Connect Handshake</button>
+                    <button class="connect-btn" onclick="sendConnectRequest(${artist.id})">Send connect request</button>
                 `;
                 grid.appendChild(el);
             });
@@ -240,7 +236,7 @@ async function searchProximity(isNewSearch = true) {
 
         } else {
             const err = await response.json();
-            grid.innerHTML = `<p style="color: #f75a68;">Spatial Scan Fault: ${err.detail || 'Failed search synchronization execution.'}</p>`;
+            grid.innerHTML = `<p class="error-note">Search failed: ${err.detail || 'Something went wrong. Try again.'}</p>`;
         }
     } catch (error) {
         console.error("Discovery engine routing failure:", error);
@@ -260,7 +256,7 @@ async function fetchIncomingRequests() {
         inbox.innerHTML = '';
 
         if (requests.length === 0) {
-            inbox.innerHTML = `<p style="color: #a8a8b3;">Your inbox is empty. No pending handshakes.</p>`;
+            inbox.innerHTML = `<p class="empty-note">No pending requests right now.</p>`;
             return;
         }
 
@@ -269,10 +265,8 @@ async function fetchIncomingRequests() {
             el.className = 'request-card';
             el.innerHTML = `
                 <div>
-                    <strong style="color: #8257e5;">Request from User ID: ${req.sender_id}</strong>
-                    <div class="request-msg" style="background: #202024; padding: 0.6rem; border-radius: 4px; margin-top: 0.5rem; font-style: italic;">
-                        "${req.message}"
-                    </div>
+                    <span class="request-from">Request from artist #${req.sender_id}</span>
+                    <div class="request-msg">"${req.message}"</div>
                 </div>
                 <div class="btn-group">
                     <button class="accept-btn" onclick="handleRequestAction(${req.id}, 'accepted')">Accept</button>
@@ -297,7 +291,7 @@ async function fetchActiveConnections() {
         networkBox.innerHTML = '';
 
         if (partners.length === 0) {
-            networkBox.innerHTML = `<p style="color: #a8a8b3;">No active connections verified yet.</p>`;
+            networkBox.innerHTML = `<p class="empty-note">No connections yet — accept a request or send one to get started.</p>`;
             return;
         }
 
@@ -306,10 +300,10 @@ async function fetchActiveConnections() {
             el.className = 'artist-card'; 
             el.innerHTML = `
                 <div>
-                    <strong style="font-size: 1.1rem; color: #04d361;">🤝 ${partner.artist_name}</strong><br>
-                    <span class="artist-role" style="background: #04d361; color: black; font-weight: bold;">${partner.role_type.toUpperCase()}</span>
+                    <span class="artist-name">🤝 ${partner.artist_name}</span><br>
+                    <span class="artist-role connected">${partner.role_type.toUpperCase()}</span>
                 </div>
-                <button class="connect-btn" style="background:#0070f3; border: none; color:#ffffff;" onclick="openChatWindow(${partner.artist_id}, '${partner.artist_name}')">Chat Now</button>
+                <button class="chat-btn" onclick="openChatWindow(${partner.artist_id}, '${partner.artist_name}')">Chat now</button>
             `;
             networkBox.appendChild(el);
         });
@@ -321,25 +315,18 @@ function injectChatUIElements() {
 
     const modal = document.createElement('div');
     modal.id = 'chat-modal';
-    modal.className = 'hidden';
-    modal.style = "position:fixed; bottom:20px; right:20px; width:360px; height:450px; background:#121214; border:1px solid #29292e; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.5); display:flex; flex-direction:column; z-index:9999; color:white; font-family:sans-serif;";
-    
+    modal.className = 'chat-modal hidden';
+
     modal.innerHTML = `
-        <div style="padding:12px; background:#202024; border-bottom:1px solid #29292e; display:flex; justify-content:space-between; align-items:center; border-top-left-radius:8px; border-top-right-radius:8px;">
-            <div>
-                <strong id="chat-title" style="color:#04d361;">Chat Pane</strong>
-            </div>
-            <button onclick="closeChatWindow()" style="background:transparent; border:none; color:#a8a8b3; cursor:pointer; font-size:16px;">✕</button>
+        <div class="chat-header">
+            <strong id="chat-title">Chat</strong>
+            <button class="chat-close" onclick="closeChatWindow()">✕</button>
         </div>
-        <div id="chat-messages" style="flex:1; padding:15px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; background:#121214;"></div>
-        
-        <form id="chat-submit-form" style="padding:10px; border-top:1px solid #29292e; display:flex !important; flex-direction:row !important; align-items:center !important; gap:8px !important; background:#202024; border-bottom-left-radius:8px; border-bottom-right-radius:8px; width:100% !important; box-sizing:border-box !important;">
-            <input type="text" id="chat-input-text" placeholder="Type text..." required autocomplete="off" 
-                style="flex: 1 !important; display: block !important; width: 100% !important; min-width: 0 !important; height: 38px !important; padding: 0 12px !important; background:#121214 !important; border:1px solid #29292e !important; color:white !important; border-radius:4px !important; outline:none !important; box-sizing:border-box !important;">
-            <button type="submit" 
-                style="flex-shrink: 0 !important; width: auto !important; height: 38px !important; background:#0070f3 !important; color:white !important; border:none !important; padding:0 20px !important; border-radius:4px !important; cursor:pointer !important; font-weight:bold !important; white-space:nowrap !important; box-sizing:border-box !important;">
-                Send
-            </button>
+        <div id="chat-messages" class="chat-messages"></div>
+
+        <form id="chat-submit-form" class="chat-form">
+            <input type="text" id="chat-input-text" class="chat-input" placeholder="Type a message…" required autocomplete="off">
+            <button type="submit" class="chat-send">Send</button>
         </form>
     `;
     document.body.appendChild(modal);
@@ -395,23 +382,14 @@ async function fetchChatTimeline() {
         box.innerHTML = '';
 
         if (messages.length === 0) {
-            box.innerHTML = `<p style="color:#555; text-align:center; font-size:12px; margin-top:20px;">No messages. Send a message to start!</p>`;
+            box.innerHTML = `<p class="chat-empty">No messages yet — say hi!</p>`;
             return;
         }
 
         messages.forEach(msg => {
             const isMe = msg.sender_id !== activeChatArtistId;
             const bubble = document.createElement('div');
-            bubble.style = `
-                padding: 8px 12px; 
-                border-radius: 8px; 
-                max-width: 75%; 
-                font-size: 13px; 
-                word-break: break-word;
-                align-self: ${isMe ? 'flex-end' : 'flex-start'}; 
-                background: ${isMe ? '#0070f3' : '#29292e'};
-                color: white;
-            `;
+            bubble.className = `msg-bubble ${isMe ? 'msg-mine' : 'msg-theirs'}`;
             bubble.innerText = msg.message_text;
             box.appendChild(bubble);
         });
@@ -430,7 +408,7 @@ async function sendConnectRequest(receiverId) {
         body: JSON.stringify({ receiver_id: receiverId, message: userMsg })
     });
 
-    if (response.ok) { alert("Collaboration connection request dispatched successfully!"); } 
+    if (response.ok) { alert("Connect request sent!"); } 
     else { alert(`Failed to connect: ${(await response.json()).detail || 'Unknown error'}`); }
 }
 
@@ -442,7 +420,7 @@ async function handleRequestAction(requestId, actionType) {
     });
 
     if (response.ok) {
-        alert(`Request ${actionType} successfully!`);
+        alert(`Request ${actionType}.`);
         fetchIncomingRequests(); 
         fetchActiveConnections();
     } else { alert(`Failed to update request: ${(await response.json()).detail || 'Unknown error'}`); }
@@ -464,7 +442,7 @@ async function syncArtistLocation() {
     const statusDiv = document.getElementById('syncStatus');
     
     if (!navigator.geolocation) {
-        statusDiv.innerHTML = '<span style="color: red;">Your browser does not support geolocation metrics.</span>';
+        statusDiv.innerHTML = '<span class="status-err">Your browser does not support location sharing.</span>';
         return;
     }
 
@@ -475,7 +453,7 @@ async function syncArtistLocation() {
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
             
-            statusDiv.innerHTML = `Coordinates captured (${lat.toFixed(4)}, ${lon.toFixed(4)}). Syncing cloud profile...`;
+            statusDiv.innerHTML = `Got your coordinates (${lat.toFixed(4)}, ${lon.toFixed(4)}). Syncing…`;
 
             try {
                 const token = localStorage.getItem('token');
@@ -489,20 +467,20 @@ async function syncArtistLocation() {
                 });
 
                 if (response.ok) {
-                    statusDiv.innerHTML = '<span style="color: green;">✔ Profile location synced successfully!</span>';
+                    statusDiv.innerHTML = '<span class="status-ok">✔ Location synced.</span>';
                     loadDashboard();
                 } else {
                     const err = await response.json();
-                    statusDiv.innerHTML = `<span style="color: red;">Sync failed: ${err.detail || 'Server error'}</span>`;
+                    statusDiv.innerHTML = `<span class="status-err">Sync failed: ${err.detail || 'Server error'}</span>`;
                 }
             } catch (error) {
                 console.error("Location sync error:", error);
-                statusDiv.innerHTML = '<span style="color: red;">Network failure connecting to profile router.</span>';
+                statusDiv.innerHTML = '<span class="status-err">Network error — check your connection and try again.</span>';
             }
         },
         (error) => {
             console.error("Geolocation error callback:", error);
-            statusDiv.innerHTML = '<span style="color: red;">Permission denied or location retrieval timed out.</span>';
+            statusDiv.innerHTML = '<span class="status-err">Permission denied, or the request timed out.</span>';
         },
         { enableHighAccuracy: true, timeout: 10000 }
     );
