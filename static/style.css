@@ -355,6 +355,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focu
     padding-top: 4.25rem !important;
 }
 
+.dashboard-layout > .card > * {
+    flex-shrink: 0;
+}
+
 .dashboard-layout > .card button {
     margin-top: auto !important;
 }
@@ -451,7 +455,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focu
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     text-align: left;
-    margin-top: 1.1rem;
     background: var(--ink);
 }
 .track-label {
@@ -476,7 +479,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focu
     font-size: 0.78rem;
     color: var(--text-faint);
     text-align: center;
-    margin-top: 1.1rem;
     line-height: 1.5;
 }
 
