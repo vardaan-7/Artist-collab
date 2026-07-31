@@ -108,7 +108,7 @@ async function loadDashboard() {
             }
         }
         
-        document.getElementById('auth-card').classList.add('hidden');
+        document.getElementById('auth-shell').classList.add('hidden');
         document.getElementById('main-dashboard').classList.remove('hidden');
         document.getElementById('artist-grid').innerHTML = `<p class="empty-note">Pick a role above to see who's playing nearby.</p>`;
         
