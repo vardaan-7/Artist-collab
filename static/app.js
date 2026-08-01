@@ -168,7 +168,7 @@ async function discoverArtistsByAudioVibe() {
             const matchingCreators = data.similar_creators;
             grid.innerHTML = '';
 
-            if (matchingCreators.length === 0) {
+            if (!matchingCreators || matchingCreators.length === 0) {
                 grid.innerHTML = '<p class="empty-note">No matching sonic signatures discovered. Make sure you have sync\'d your audio track to the cloud radar first!</p>';
                 return;
             }
@@ -176,19 +176,23 @@ async function discoverArtistsByAudioVibe() {
             matchingCreators.forEach(match => {
                 const el = document.createElement('div');
                 el.className = 'artist-card';
-                // Render proximity metric using the similarity score returned from vector calculations
-                const dynamicMatchScore = (match.similarity_score * 100).toFixed(1);
                 
+                // 💡 FIX: Safely pull parameters using the exact keys sent by your backend router
+                const artistId = match.artist_id; 
+                const artistName = match.artist_name || `Artist #${artistId}`;
+                const roleType = match.role_type ? match.role_type.toUpperCase() : "CREATOR";
+                const displayScore = match.match_score; // Already pre-multiplied by 100 on the server
+
                 el.innerHTML = `
                     <div>
                         <div class="artist-card-top">
-                            <span class="artist-name">${match.artist_name}</span>
-                            <span class="chip-distance" style="background-color: var(--teal); color: #fff;">🔥 ${dynamicMatchScore}% Vibe Match</span>
+                            <span class="artist-name">${artistName}</span>
+                            <span class="chip-distance" style="background-color: var(--teal, #008080); color: #fff;">🔥 ${displayScore}% Vibe Match</span>
                         </div>
-                        <span class="artist-role">${match.role_type.toUpperCase()}</span>
-                        <div class="artist-bio">${match.bio || 'No profile catalog bio configured.'}</div>
+                        <span class="artist-role">${roleType}</span>
+                        <div class="artist-bio">Sonic profile aligned. Ready to lock in a new production track session.</div>
                     </div>
-                    <button class="connect-btn" onclick="sendConnectRequest(${match.id})">Send connect request</button>
+                    <button class="connect-btn" onclick="sendConnectRequest(${artistId})">Send connect request</button>
                 `;
                 grid.appendChild(el);
             });
