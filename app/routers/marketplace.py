@@ -1,5 +1,7 @@
 import os
+import traceback
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.concurrency import run_in_threadpool
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 
@@ -131,7 +133,7 @@ def view_active_connections(
 
 
 @router.post("/sync-audio-radar")
-def sync_audio_radar(
+async def sync_audio_radar(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -148,7 +150,8 @@ def sync_audio_radar(
             detail="No primary audio track asset located inside your portfolio profile."
         )
 
-    vector = extract_audio_features(audio_track.file_url)
+    # ⚡ OFF-LOAD BLOCK: Run Librosa processing inside an isolated async-safe worker thread
+    vector = await run_in_threadpool(extract_audio_features, audio_track.file_url)
     if not vector:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -166,7 +169,8 @@ def sync_audio_radar(
                         "artist_id": current_user.id,
                         "artist_name": current_user.artist_name,
                         "role_type": current_user.role_type,
-                        "tenant_id": current_user.tenant_id
+                        "tenant_id": current_user.tenant_id,
+                        "bio": current_user.bio or "Hey there!"
                     }
                 )
             ]
@@ -176,6 +180,8 @@ def sync_audio_radar(
             "message": f"Sonic vector footprint compiled successfully for '{current_user.artist_name}'!"
         }
     except Exception as e:
+        # ⚡ VISIBILITY FIX: Forces the actual error trace to print to your Render terminal logs
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Qdrant storage cluster upload failure: {str(e)}"
@@ -247,11 +253,14 @@ def discover_by_audio_similarity(
 
         matches = []
         for match in search_results:
+            payload_data = match.get("payload", {})
+            # ⚡ UI ALIGNMENT: Maps directly to the keys expected by your app.js loop logic
             matches.append({
-                "artist_id": match.get("payload", {}).get("artist_id"),
-                "artist_name": match.get("payload", {}).get("artist_name"),
-                "role_type": match.get("payload", {}).get("role_type"),
-                "match_score": round(match.get("score", 0) * 100, 2)
+                "id": payload_data.get("artist_id"),
+                "artist_name": payload_data.get("artist_name"),
+                "role_type": payload_data.get("role_type"),
+                "bio": payload_data.get("bio", "No profile bio available."),
+                "similarity_score": round(match.get("score", 0), 4)
             })
 
         return {
@@ -262,6 +271,7 @@ def discover_by_audio_similarity(
     except HTTPException:
         raise
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Vector matching index scan failed: {str(e)}"
