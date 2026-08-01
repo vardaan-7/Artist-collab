@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.middleware.rate_limiter import RedisRateLimiterMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.core.database import engine, Base
@@ -13,16 +14,29 @@ from app.routers import auth
 from app.routers import marketplace, chat
 from app.routers.media import router as media_router
 from app.services.vector_storage import vector_service
+# Import the audio collection initializer for the vector database
+from app.core.qdrant_setup import init_audio_collection
 
 # Instruct SQLAlchemy to auto-create our tables if they don't exist yet
 Base.metadata.create_all(bind=engine)
 
-# Initialize the FastAPI Core Application Instance
+# Define the async lifespan manager to handle startup operations securely
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # This runs automatically the second the app boots up on Render
+    try:
+        init_audio_collection()
+    except Exception as e:
+        print(f"🚨 Automatic Qdrant initialization failed on startup: {e}")
+    yield
+
+# Initialize the FastAPI Core Application Instance with lifespan management
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version="1.0.0",
     docs_url="/docs",       # Swagger UI documentation endpoint path
-    redoc_url="/redoc"      # Alternative ReDoc documentation endpoint path
+    redoc_url="/redoc",     # Alternative ReDoc documentation endpoint path
+    lifespan=lifespan       # Registers the automated storage setup lifespan hook
 )
 
 # Mount Security CORS Middleware Guard Filtersg
