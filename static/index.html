@@ -128,7 +128,7 @@
                 <div class="panel-box">
                     <div class="panel-eyebrow">◆ Discover</div>
                     <h2>Find your next collaborator</h2>
-                    <p>Browse creators near you, closest first.</p>
+                    <p>Browse creators near you, or discover sonic matches based on musical style similarity.</p>
 
                     <div class="filter-bar">
                         <select id="role-search-input">
@@ -166,7 +166,9 @@
                             </optgroup>
                         </select>
 
-                        <button onclick="searchProximity(true)" class="btn-marigold">Search</button>
+                        <button onclick="searchProximity(true)" class="btn-marigold">Search Near Me</button>
+                        <!-- Added Audio Vibe Match UI Button Elements Trigger Hook -->
+                        <button id="vibeMatchBtn" class="btn-teal">Vibe Match</button>
                     </div>
 
                     <div id="artist-grid" class="artist-grid"></div>

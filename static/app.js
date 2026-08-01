@@ -94,6 +94,9 @@ async function loadDashboard() {
                             <source src="${track.file_url}" type="${track.mime_type || 'audio/mpeg'}">
                             Your browser does not support the audio element.
                         </audio>
+                        <!-- Contextually run cross-cluster alignment execution logic directly from the view container -->
+                        <button onclick="syncAudioRadarFingerprint()" class="btn-block btn-teal" style="margin-top:0.6rem; font-size:0.75rem;">⚡ Sync Audio Radar</button>
+                        <div id="radarSyncStatus" class="status-msg"></div>
                     </div>
                 `;
             } else {
@@ -110,12 +113,93 @@ async function loadDashboard() {
         
         document.getElementById('auth-shell').classList.add('hidden');
         document.getElementById('main-dashboard').classList.remove('hidden');
-        document.getElementById('artist-grid').innerHTML = `<p class="empty-note">Pick a role above to see who's playing nearby.</p>`;
+        document.getElementById('artist-grid').innerHTML = `<p class="empty-note">Pick a filter or search to see who's playing nearby.</p>`;
         
         injectChatUIElements();
         fetchIncomingRequests();
         fetchActiveConnections(); 
     } else { logout(); }
+}
+
+async function syncAudioRadarFingerprint() {
+    const statusDiv = document.getElementById('radarSyncStatus');
+    if (statusDiv) statusDiv.innerHTML = "Processing sonic footprint layers...";
+    
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${apiBase}/sync-audio-radar`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const data = await response.json();
+        if (response.ok) {
+            if (statusDiv) statusDiv.innerHTML = '<span class="status-ok">✔ Sonic spectrum vector mapped to Qdrant Cloud!</span>';
+        } else {
+            if (statusDiv) statusDiv.innerHTML = `<span class="status-err">Sync failed: ${data.detail || 'Processing loop rejected'}</span>`;
+        }
+    } catch (err) {
+        console.error("Audio radar extraction fault:", err);
+        if (statusDiv) statusDiv.innerHTML = '<span class="status-err">Vector indexing gateway error.</span>';
+    }
+}
+
+async function discoverArtistsByAudioVibe() {
+    const token = localStorage.getItem('token');
+    const grid = document.getElementById('artist-grid');
+    const paginationBar = document.getElementById('pagination-bar');
+    
+    grid.innerHTML = '<p class="empty-note">Running cross-spectrum audio vector comparison checks across clusters…</p>';
+    if (paginationBar) paginationBar.classList.add('hidden');
+
+    try {
+        const response = await fetch(`${apiBase}/discover/audio?limit=5`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.status === 429) {
+            grid.innerHTML = '<p class="error-note">You are evaluating vector signatures too quickly — give the node a breather.</p>';
+            return;
+        }
+
+        if (response.ok) {
+            const data = await response.json();
+            const matchingCreators = data.similar_creators;
+            grid.innerHTML = '';
+
+            if (matchingCreators.length === 0) {
+                grid.innerHTML = '<p class="empty-note">No matching sonic signatures discovered. Make sure you have sync\'d your audio track to the cloud radar first!</p>';
+                return;
+            }
+
+            matchingCreators.forEach(match => {
+                const el = document.createElement('div');
+                el.className = 'artist-card';
+                // Render proximity metric using the similarity score returned from vector calculations
+                const dynamicMatchScore = (match.similarity_score * 100).toFixed(1);
+                
+                el.innerHTML = `
+                    <div>
+                        <div class="artist-card-top">
+                            <span class="artist-name">${match.artist_name}</span>
+                            <span class="chip-distance" style="background-color: var(--teal); color: #fff;">🔥 ${dynamicMatchScore}% Vibe Match</span>
+                        </div>
+                        <span class="artist-role">${match.role_type.toUpperCase()}</span>
+                        <div class="artist-bio">${match.bio || 'No profile catalog bio configured.'}</div>
+                    </div>
+                    <button class="connect-btn" onclick="sendConnectRequest(${match.id})">Send connect request</button>
+                `;
+                grid.appendChild(el);
+            });
+        } else {
+            const err = await response.json();
+            grid.innerHTML = `<p class="error-note">Vector execution failure: ${err.detail || 'Could not map similarities'}</p>`;
+        }
+    } catch (error) {
+        console.error("Qdrant pipeline discovery fault:", error);
+        grid.innerHTML = '<p class="error-note">Network gateway timed out while fetching vector sets.</p>';
+    }
 }
 
 async function executeAudioUpload(event) {
@@ -489,6 +573,10 @@ async function syncArtistLocation() {
 document.addEventListener('click', (e) => {
     if (e.target && e.target.id === 'syncLocationBtn') {
         syncArtistLocation();
+    }
+    // Handle Vibe Matching Event Triggers Cleanly
+    if (e.target && e.target.id === 'vibeMatchBtn') {
+        discoverArtistsByAudioVibe();
     }
 });
 

@@ -966,3 +966,55 @@ button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focu
         bottom: 12px;
     }
 }
+/* ==========================================================================
+   Audio Radar & Vibe Matching Additions
+   ========================================================================== */
+
+/* The Vibe Match Action Button */
+.btn-teal {
+    background: var(--teal, #008080);
+    color: #ffffff;
+    border: none;
+    padding: 0.65rem 1.2rem;
+    font-family: var(--font-mono), monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.btn-teal:hover {
+    background: #006666;
+}
+
+/* Inline Sync Action for Existing Tracks */
+.track-card .btn-teal {
+    border-radius: 4px;
+    margin-top: 0.6rem;
+    display: inline-block;
+    width: 100%;
+}
+
+/* Dynamic Vibe Percentage Badge */
+.chip-distance[style*="background-color"] {
+    font-family: var(--font-mono), monospace;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    letter-spacing: 0.02em;
+}
+
+/* Empty State Styling for Vector Search Warnings */
+.error-note {
+    grid-column: 1 / -1;
+    padding: 2rem;
+    text-align: center;
+    background: rgba(255, 0, 0, 0.05);
+    border: 1px dashed #ff4d4d;
+    color: #ff4d4d;
+    font-family: var(--font-mono), monospace;
+    font-size: 0.85rem;
+}
