@@ -7,7 +7,7 @@ import requests
 def extract_audio_features(file_path_or_url: str) -> list:
     """
     Accepts either a local file path or a MinIO web URL, downloads it if necessary,
-    and extracts 33 distinct acoustic features using librosa.
+    and extracts 33 distinct acoustic features using librosa. Optimized for low-memory environments.
     """
     local_path = file_path_or_url
     is_url = file_path_or_url.startswith("http://") or file_path_or_url.startswith("https://")
@@ -37,8 +37,8 @@ def extract_audio_features(file_path_or_url: str) -> list:
             print(f"Target path does not exist: {local_path}")
             return None
 
-        # Load the track (limited to the first 60 seconds for processing speed)
-        y, sr = librosa.load(local_path, sr=22050, mono=True, duration=60.0)
+        # ⚡ OPTIMIZATION: Downsample to 16kHz and read only the first 10 seconds to fit into 512MB RAM
+        y, sr = librosa.load(local_path, sr=16000, mono=True, duration=10.0)
         
         # Guardrail against empty or corrupted files
         if len(y) == 0:
@@ -57,7 +57,8 @@ def extract_audio_features(file_path_or_url: str) -> list:
         mfcc_means = np.mean(mfcc, axis=1)
 
         # Feature Group 3: Harmony - Chroma STFT (12 Features)
-        chroma = librosa.feature.chroma_stft(y=y, sr=sr, n_chroma=12)
+        # ⚡ OPTIMIZATION: explicitly limit n_fft to 1024 to minimize calculations during matrix generation
+        chroma = librosa.feature.chroma_stft(y=y, sr=sr, n_chroma=12, n_fft=1024)
         chroma_means = np.mean(chroma, axis=1)
 
         # Combine all parts into our strict 33-dimension float array profile map
