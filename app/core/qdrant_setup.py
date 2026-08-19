@@ -3,15 +3,17 @@ import re
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 
-raw_url = os.getenv("QDRANT_URL", "http://localhost:6333").strip()
-qdrant_api_key = os.getenv("QDRANT_API_KEY")
+raw_url = os.getenv("QDRANT_URL", "").strip()
+qdrant_api_key = os.getenv("QDRANT_API_KEY", "").strip() or None
 
-if "cloud.qdrant.io" in raw_url:
-    # Strip schemes, ports, and trailing paths so we get just the hostname
-    clean_host = raw_url.replace("https://", "").replace("http://", "")
-    clean_host = re.sub(r":\d+.*$", "", clean_host).rstrip("/")
+# Clean the URL to extract strictly the host domain
+clean_host = raw_url.replace("https://", "").replace("http://", "")
+clean_host = re.sub(r":\d+.*$", "", clean_host)   # Remove any trailing :port
+clean_host = clean_host.split("/")[0].strip()      # Remove any trailing /paths
 
-    print(f"🔌 Connecting to Qdrant Cloud Host: {clean_host} over HTTPS (Port 443)")
+print(f"🔌 [Qdrant Setup] Connecting to Host: '{clean_host}' | API Key Found: {bool(qdrant_api_key)}")
+
+if clean_host and "cloud.qdrant.io" in clean_host:
     qdrant_client = QdrantClient(
         host=clean_host,
         port=443,
@@ -20,13 +22,15 @@ if "cloud.qdrant.io" in raw_url:
         timeout=10.0,
         prefer_grpc=False
     )
-else:
-    print(f"🔌 Connecting to local/custom Qdrant: {raw_url}")
+elif raw_url:
     qdrant_client = QdrantClient(
         url=raw_url,
         api_key=qdrant_api_key,
         timeout=10.0
     )
+else:
+    # Fallback to local default
+    qdrant_client = QdrantClient(url="http://localhost:6333", timeout=5.0)
 
 def init_audio_collection():
     collection_name = "artist_audio_radar"
