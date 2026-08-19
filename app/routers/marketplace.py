@@ -205,7 +205,7 @@ def discover_by_audio_similarity(
         else:
             my_vector = [float(x) for x in raw_data]
 
-        # 2. Query Qdrant natively with proper authentication and filters
+        # 2. Query Qdrant with filters
         search_filter = models.Filter(
             must=[
                 models.FieldCondition(
@@ -221,13 +221,24 @@ def discover_by_audio_similarity(
             ]
         )
 
-        search_results = qdrant_client.search(
-            collection_name="artist_audio_radar",
-            query_vector=my_vector,
-            query_filter=search_filter,
-            limit=limit,
-            with_payload=True
-        )
+        # Uses query_points() for modern SDKs with fallback to legacy search()
+        if hasattr(qdrant_client, "query_points"):
+            response = qdrant_client.query_points(
+                collection_name="artist_audio_radar",
+                query=my_vector,
+                query_filter=search_filter,
+                limit=limit,
+                with_payload=True
+            )
+            search_results = response.points
+        else:
+            search_results = qdrant_client.search(
+                collection_name="artist_audio_radar",
+                query_vector=my_vector,
+                query_filter=search_filter,
+                limit=limit,
+                with_payload=True
+            )
 
         matches = []
         for match in search_results:
