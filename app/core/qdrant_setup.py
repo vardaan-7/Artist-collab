@@ -50,6 +50,20 @@ def init_audio_collection():
             print(f"✅ Collection '{collection_name}' initialized successfully!")
         else:
             print(f"ℹ️ Cabinet '{collection_name}' already exists. Ready for use.")
+
+        # ⚡ Index required payload keys for fast keyword filtering
+        for field in ["tenant_id", "artist_id"]:
+            try:
+                qdrant_client.create_payload_index(
+                    collection_name=collection_name,
+                    field_name=field,
+                    field_schema=models.PayloadSchemaType.KEYWORD
+                )
+                print(f"✅ Payload index ensured for: '{field}'")
+            except Exception:
+                # Silently ignore if index is already registered
+                pass
+
     except Exception as e:
         print(f"❌ Error handling Qdrant connection/initialization: {str(e)}")
 
