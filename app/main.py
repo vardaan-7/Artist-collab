@@ -1,85 +1,83 @@
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.middleware.rate_limiter import RedisRateLimiterMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from contextlib import asynccontextmanager
+from starlette.concurrency import run_in_threadpool
 
 from app.core.config import settings
 from app.core.database import engine, Base
 from app.models.collab import CollabRequest
 from app.models.media import MediaPortfolio
-from app.routers import auth
-from app.routers import marketplace, chat
+from app.routers import auth, marketplace, chat
 from app.routers.media import router as media_router
-from app.services.vector_storage import vector_service
-# Import the audio collection initializer for the vector database
+from app.middleware.rate_limiter import RedisRateLimiterMiddleware
 from app.core.qdrant_setup import init_audio_collection
 
-# Instruct SQLAlchemy to auto-create our tables if they don't exist yet
-Base.metadata.create_all(bind=engine)
-
-# Define the async lifespan manager to handle startup operations securely
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # This runs automatically the second the app boots up on Render
+    # 1. Initialize Database Tables safely on boot
     try:
-        init_audio_collection()
+        await run_in_threadpool(Base.metadata.create_all, bind=engine)
+        print("✅ Database schemas validated and ready.")
+    except Exception as e:
+        print(f"⚠️ Database initialization notice: {e}")
+
+    # 2. Initialize Qdrant Collection without blocking event loop
+    try:
+        await run_in_threadpool(init_audio_collection)
     except Exception as e:
         print(f"🚨 Automatic Qdrant initialization failed on startup: {e}")
+
     yield
 
-# Initialize the FastAPI Core Application Instance with lifespan management
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version="1.0.0",
-    docs_url="/docs",       # Swagger UI documentation endpoint path
-    redoc_url="/redoc",     # Alternative ReDoc documentation endpoint path
-    lifespan=lifespan       # Registers the automated storage setup lifespan hook
+    docs_url="/docs",
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
-# Mount Security CORS Middleware Guard Filtersg
+# CORS Guard
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],    # In production, swap "*" for your exact domain names
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Rate Limiter
 override_redis_url = os.getenv("REDIS_URL") or getattr(settings, "REDIS_URL", "redis://localhost:6379")
-
-print(f"📡 INITIALIZING MEDIA GATEWAY PIPELINE: Binding Rate Limiter to Redis at -> {override_redis_url}")
-
 app.add_middleware(
     RedisRateLimiterMiddleware, 
     redis_url=override_redis_url, 
-    max_requests=60, # Increased slightly to prevent media chunk upload throttling loops
+    max_requests=60,
     window_seconds=60
 )
 
-# Register Application Architectural Domain Routers
+# Architectural Domain Routers (Using consistent API_V1_STR)
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(marketplace.router, prefix=settings.API_V1_STR)
 app.include_router(media_router, prefix=settings.API_V1_STR)
-app.include_router(chat.router, prefix="/api/v1")  # 💡 Fixed: Removed the stray 'g' from the end of this line
+app.include_router(chat.router, prefix=settings.API_V1_STR)
 
-# Mount the static directory to serve assets, CSS, or JS files
+# Static File Mounting
+os.makedirs("static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# PRODUCTION FILESYSTEM STORAGE ROUTE (For Render Deployment)
-# This exposes the local container folder so the frontend can stream audio uploaded files
 if os.getenv("RENDER", "false").lower() == "true":
     os.makedirs("static_uploads", exist_ok=True)
     app.mount("/static/uploads", StaticFiles(directory="static_uploads"), name="production_uploads")
 
-# Serve the main single-page application interface for the artist portal
+# Frontend Root Route
 @app.get("/", tags=["Frontend"])
 def read_index():
     return FileResponse(os.path.join("static", "index.html"))
 
-# Core Root System Health Diagnostic Probe
+# Health Diagnostic Probe
 @app.get("/health", tags=["Health Check"])
 def root_health_check():
     return {
