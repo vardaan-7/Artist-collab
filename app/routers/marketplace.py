@@ -13,7 +13,6 @@ from app.models.collab import CollabRequest
 from app.repositories.marketplace_repo import MarketplaceRepository
 from app.schemas.user import UserResponse
 from app.schemas.collab import CollabRequestCreate, CollabRequestResponse
-import requests
 
 from app.services.audio_processor import extract_audio_features
 from app.core.qdrant_setup import qdrant_client
@@ -28,12 +27,11 @@ def browse_marketplace(
     db: Session = Depends(get_db)
 ):
     marketplace_repo = MarketplaceRepository(db)
-    artists = marketplace_repo.get_marketplace_artists(
+    return marketplace_repo.get_marketplace_artists(
         current_user_id=current_user.id,
         tenant_id=current_user.tenant_id,
         role_type=role_type
     )
-    return artists
 
 
 @router.get("/discover")
@@ -51,7 +49,7 @@ def discover_artists_by_proximity(
         )
 
     marketplace_repo = MarketplaceRepository(db)
-    paginated_results = marketplace_repo.get_artists_paginated_by_proximity(
+    return marketplace_repo.get_artists_paginated_by_proximity(
         current_user_id=current_user.id,
         tenant_id=current_user.tenant_id,
         my_lat=current_user.latitude,
@@ -60,7 +58,6 @@ def discover_artists_by_proximity(
         limit=limit,
         cursor=cursor
     )
-    return paginated_results
 
 
 @router.post("/connect", response_model=CollabRequestResponse, status_code=status.HTTP_201_CREATED)
@@ -76,13 +73,12 @@ def initiate_collaboration(
             detail="You cannot initiate a collaboration request with yourself."
         )
         
-    new_request = marketplace_repo.create_collab_request(
+    return marketplace_repo.create_collab_request(
         tenant_id=current_user.tenant_id,
         sender_id=current_user.id,
         receiver_id=payload.receiver_id,
         message=payload.message
     )
-    return new_request
 
 
 @router.get("/requests/incoming")
@@ -90,11 +86,10 @@ def get_incoming_requests(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    requests = db.query(CollabRequest).filter(
+    return db.query(CollabRequest).filter(
         CollabRequest.receiver_id == current_user.id,
         CollabRequest.status == "pending"
     ).all()
-    return requests
 
 
 @router.patch("/requests/{request_id}/status", response_model=CollabRequestResponse)
@@ -111,12 +106,11 @@ def respond_to_collab_request(
         )
         
     marketplace_repo = MarketplaceRepository(db)
-    updated_request = marketplace_repo.update_collab_request_status(
+    return marketplace_repo.update_collab_request_status(
         request_id=request_id,
         current_user_id=current_user.id,
         new_status=action
     )
-    return updated_request
 
 
 @router.get("/connections", response_model=List[UserResponse])
@@ -125,11 +119,10 @@ def view_active_connections(
     db: Session = Depends(get_db)
 ):
     marketplace_repo = MarketplaceRepository(db)
-    connections = marketplace_repo.get_active_connections(
+    return marketplace_repo.get_active_connections(
         current_user_id=current_user.id,
         tenant_id=current_user.tenant_id
     )
-    return connections
 
 
 @router.post("/sync-audio-radar")
@@ -150,7 +143,6 @@ async def sync_audio_radar(
             detail="No primary audio track asset located inside your portfolio profile."
         )
 
-    # ⚡ OFF-LOAD BLOCK: Run Librosa processing inside an isolated async-safe worker thread
     vector = await run_in_threadpool(extract_audio_features, audio_track.file_url)
     if not vector:
         raise HTTPException(
@@ -170,7 +162,7 @@ async def sync_audio_radar(
                         "artist_name": current_user.artist_name,
                         "role_type": current_user.role_type,
                         "tenant_id": current_user.tenant_id,
-                        "bio": current_user.bio or "Hey there!"
+                        "bio": getattr(current_user, "bio", "No profile bio available.") or "No profile bio available."
                     }
                 )
             ]
@@ -180,7 +172,6 @@ async def sync_audio_radar(
             "message": f"Sonic vector footprint compiled successfully for '{current_user.artist_name}'!"
         }
     except Exception as e:
-        # ⚡ VISIBILITY FIX: Forces the actual error trace to print to your Render terminal logs
         traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -195,6 +186,7 @@ def discover_by_audio_similarity(
     db: Session = Depends(get_db)
 ):
     try:
+        # 1. Retrieve origin user's vector
         point_result = qdrant_client.retrieve(
             collection_name="artist_audio_radar",
             ids=[current_user.id],
@@ -213,54 +205,39 @@ def discover_by_audio_similarity(
         else:
             my_vector = [float(x) for x in raw_data]
 
-        base_qdrant_url = os.getenv("QDRANT_URL") or getattr(settings, "QDRANT_URL", "http://localhost:6333")
-        base_qdrant_url = base_qdrant_url.rstrip("/")
-        qdrant_url = f"{base_qdrant_url}/collections/artist_audio_radar/points/search"
-        
-        payload = {
-          "vector": my_vector,
-          "filter": {
-            "must": [
-              {
-                "key": "tenant_id",
-                "match": {
-                  "value": current_user.tenant_id
-                }
-              }
+        # 2. Query Qdrant natively with proper authentication and filters
+        search_filter = models.Filter(
+            must=[
+                models.FieldCondition(
+                    key="tenant_id",
+                    match=models.MatchValue(value=current_user.tenant_id)
+                )
             ],
-            "must_not": [
-              {
-                "key": "artist_id",
-                "match": {
-                  "value": current_user.id
-                }
-              }
+            must_not=[
+                models.FieldCondition(
+                    key="artist_id",
+                    match=models.MatchValue(value=current_user.id)
+                )
             ]
-          },
-          "limit": limit,
-          "with_payload": True
-        }
+        )
 
-        response = requests.post(qdrant_url, json=payload, timeout=5)
-        
-        if response.status_code != 200:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Qdrant engine REST endpoint rejected request: {response.text}"
-            )
-            
-        search_results = response.json().get("result", [])
+        search_results = qdrant_client.search(
+            collection_name="artist_audio_radar",
+            query_vector=my_vector,
+            query_filter=search_filter,
+            limit=limit,
+            with_payload=True
+        )
 
         matches = []
         for match in search_results:
-            payload_data = match.get("payload", {})
-            # ⚡ UI ALIGNMENT: Maps directly to the keys expected by your app.js loop logic
+            payload_data = match.payload or {}
             matches.append({
                 "id": payload_data.get("artist_id"),
                 "artist_name": payload_data.get("artist_name"),
                 "role_type": payload_data.get("role_type"),
                 "bio": payload_data.get("bio", "No profile bio available."),
-                "similarity_score": round(match.get("score", 0), 4)
+                "similarity_score": round(match.score, 4)
             })
 
         return {
