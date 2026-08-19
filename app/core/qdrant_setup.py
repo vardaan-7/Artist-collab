@@ -6,18 +6,19 @@ from qdrant_client.http import models
 raw_url = os.getenv("QDRANT_URL", "").strip()
 qdrant_api_key = os.getenv("QDRANT_API_KEY", "").strip() or None
 
-# Clean the URL to extract strictly the host domain
+# Clean the host
 clean_host = raw_url.replace("https://", "").replace("http://", "")
-clean_host = re.sub(r":\d+.*$", "", clean_host)   # Remove any trailing :port
-clean_host = clean_host.split("/")[0].strip()      # Remove any trailing /paths
+clean_host = re.sub(r":\d+.*$", "", clean_host)
+clean_host = clean_host.split("/")[0].strip()
 
 print(f"🔌 [Qdrant Setup] Connecting to Host: '{clean_host}' | API Key Found: {bool(qdrant_api_key)}")
 
 if clean_host and "cloud.qdrant.io" in clean_host:
+    # ⚡ Qdrant Cloud requires https:// with port 6333 for REST endpoints
+    endpoint_url = f"https://{clean_host}:6333"
+    print(f"📡 Using Qdrant Cloud URL: {endpoint_url}")
     qdrant_client = QdrantClient(
-        host=clean_host,
-        port=443,
-        https=True,
+        url=endpoint_url,
         api_key=qdrant_api_key,
         timeout=10.0,
         prefer_grpc=False
@@ -29,7 +30,6 @@ elif raw_url:
         timeout=10.0
     )
 else:
-    # Fallback to local default
     qdrant_client = QdrantClient(url="http://localhost:6333", timeout=5.0)
 
 def init_audio_collection():
