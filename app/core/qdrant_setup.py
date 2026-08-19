@@ -14,7 +14,6 @@ clean_host = clean_host.split("/")[0].strip()
 print(f"🔌 [Qdrant Setup] Connecting to Host: '{clean_host}' | API Key Found: {bool(qdrant_api_key)}")
 
 if clean_host and "cloud.qdrant.io" in clean_host:
-    # ⚡ Qdrant Cloud requires https:// with port 6333 for REST endpoints
     endpoint_url = f"https://{clean_host}:6333"
     print(f"📡 Using Qdrant Cloud URL: {endpoint_url}")
     qdrant_client = QdrantClient(
@@ -51,18 +50,32 @@ def init_audio_collection():
         else:
             print(f"ℹ️ Cabinet '{collection_name}' already exists. Ready for use.")
 
-        # ⚡ Index required payload keys for fast keyword filtering
-        for field in ["tenant_id", "artist_id"]:
+        # 🛑 BULLETPROOF FIX: Force-delete any corrupted indexes, then rebuild strictly
+        indexes_to_create = [
+            ("tenant_id", models.PayloadSchemaType.KEYWORD),
+            ("artist_id", models.PayloadSchemaType.INTEGER),
+        ]
+
+        for field_name, schema_type in indexes_to_create:
             try:
+                # 1. Wipe the old index if it exists (ignores errors if missing)
+                qdrant_client.delete_payload_index(
+                    collection_name=collection_name,
+                    field_name=field_name
+                )
+            except Exception:
+                pass 
+                
+            try:
+                # 2. Recreate with the strict integer/keyword types
                 qdrant_client.create_payload_index(
                     collection_name=collection_name,
-                    field_name=field,
-                    field_schema=models.PayloadSchemaType.KEYWORD
+                    field_name=field_name,
+                    field_schema=schema_type
                 )
-                print(f"✅ Payload index ensured for: '{field}'")
-            except Exception:
-                # Silently ignore if index is already registered
-                pass
+                print(f"✅ Hardened index established for: '{field_name}' ({schema_type})")
+            except Exception as e:
+                print(f"⚠️ Index creation skipped/failed for '{field_name}': {e}")
 
     except Exception as e:
         print(f"❌ Error handling Qdrant connection/initialization: {str(e)}")
