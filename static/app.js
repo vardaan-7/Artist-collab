@@ -177,11 +177,11 @@ async function discoverArtistsByAudioVibe() {
                 const el = document.createElement('div');
                 el.className = 'artist-card';
                 
-                // 💡 FIX: Safely pull parameters using the exact keys sent by your backend router
-                const artistId = match.artist_id; 
+                const artistId = match.artist_id || match.id; 
                 const artistName = match.artist_name || `Artist #${artistId}`;
                 const roleType = match.role_type ? match.role_type.toUpperCase() : "CREATOR";
-                const displayScore = match.match_score; // Already pre-multiplied by 100 on the server
+                // Uses the percentage computed by your backend
+                const displayScore = match.match_percentage ?? Math.round((match.similarity_score || 0) * 100);
 
                 el.innerHTML = `
                     <div>
@@ -190,7 +190,7 @@ async function discoverArtistsByAudioVibe() {
                             <span class="chip-distance" style="background-color: var(--teal, #008080); color: #fff;">🔥 ${displayScore}% Vibe Match</span>
                         </div>
                         <span class="artist-role">${roleType}</span>
-                        <div class="artist-bio">Sonic profile aligned. Ready to lock in a new production track session.</div>
+                        <div class="artist-bio">${match.bio || "Sonic profile aligned. Ready to lock in a new production track session."}</div>
                     </div>
                     <button class="connect-btn" onclick="sendConnectRequest(${artistId})">Send connect request</button>
                 `;
