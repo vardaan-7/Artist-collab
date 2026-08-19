@@ -86,10 +86,11 @@ def get_incoming_requests(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return db.query(CollabRequest).filter(
+    requests = db.query(CollabRequest).filter(
         CollabRequest.receiver_id == current_user.id,
         CollabRequest.status == "pending"
     ).all()
+    return requests
 
 
 @router.patch("/requests/{request_id}/status", response_model=CollabRequestResponse)
@@ -205,7 +206,7 @@ def discover_by_audio_similarity(
         else:
             my_vector = [float(x) for x in raw_data]
 
-        # 2. Query Qdrant with filters
+        # 2. Query Qdrant with tenant isolation and self-exclusion filters
         search_filter = models.Filter(
             must=[
                 models.FieldCondition(
@@ -221,7 +222,7 @@ def discover_by_audio_similarity(
             ]
         )
 
-        # Uses query_points() for modern SDKs with fallback to legacy search()
+        # Supports query_points with fallback to search
         if hasattr(qdrant_client, "query_points"):
             response = qdrant_client.query_points(
                 collection_name="artist_audio_radar",
@@ -243,12 +244,19 @@ def discover_by_audio_similarity(
         matches = []
         for match in search_results:
             payload_data = match.payload or {}
+            raw_score = match.score
+            # Normalize to 0-100% integer
+            percentage = int(max(0.0, raw_score) * 100)
+
             matches.append({
                 "id": payload_data.get("artist_id"),
                 "artist_name": payload_data.get("artist_name"),
                 "role_type": payload_data.get("role_type"),
                 "bio": payload_data.get("bio", "No profile bio available."),
-                "similarity_score": round(match.score, 4)
+                "similarity_score": round(raw_score, 4),
+                "score": round(raw_score, 4),
+                "match_percentage": percentage,
+                "match_percentage_str": f"{percentage}%"
             })
 
         return {
