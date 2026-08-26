@@ -1,19 +1,21 @@
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from starlette.concurrency import run_in_threadpool
+from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from app.core.config import settings
-from app.core.database import engine, Base
+from app.core.database import engine, Base, get_db
 from app.models.collab import CollabRequest
 from app.models.media import MediaPortfolio
 from app.routers import auth, marketplace, chat
 from app.routers.media import router as media_router
 from app.middleware.rate_limiter import RedisRateLimiterMiddleware
-from app.core.qdrant_setup import init_audio_collection
+from app.core.qdrant_setup import init_audio_collection, qdrant_client
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -85,3 +87,28 @@ def root_health_check():
         "message": f"Welcome to the {settings.PROJECT_NAME} API Engine Gateway.",
         "environment": "production" if os.getenv("RENDER", "false").lower() == "true" else "development"
     }
+
+# Deep Multi-Service Heartbeat (Render + Supabase + Qdrant)
+@app.get("/health/heartbeat", tags=["Health Check"])
+def keep_alive_heartbeat(db: Session = Depends(get_db)):
+    health_status = {
+        "render": "alive",
+        "database": "unreachable",
+        "qdrant": "unreachable"
+    }
+    
+    # 1. Ping Supabase (active SQL query resets 7-day pause timer)
+    try:
+        db.execute(text("SELECT 1"))
+        health_status["database"] = "active"
+    except Exception as e:
+        health_status["database"] = f"error: {str(e)}"
+        
+    # 2. Ping Qdrant Cloud (API read resets 7-day suspension timer)
+    try:
+        qdrant_client.get_collections()
+        health_status["qdrant"] = "active"
+    except Exception as e:
+        health_status["qdrant"] = f"error: {str(e)}"
+        
+    return health_status
