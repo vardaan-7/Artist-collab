@@ -180,8 +180,17 @@ async function discoverArtistsByAudioVibe() {
                 const artistId = match.artist_id || match.id; 
                 const artistName = match.artist_name || `Artist #${artistId}`;
                 const roleType = match.role_type ? match.role_type.toUpperCase() : "CREATOR";
-                // Uses the percentage computed by your backend
                 const displayScore = match.match_percentage ?? Math.round((match.similarity_score || 0) * 100);
+
+                // Audio player component
+                const audioPlayer = match.sample_track_url
+                    ? `<div style="margin: 12px 0 8px 0;">
+                         <audio controls preload="none" style="width: 100%; height: 36px; border-radius: 6px;">
+                           <source src="${match.sample_track_url}">
+                           Your browser does not support audio playback.
+                         </audio>
+                       </div>`
+                    : `<p style="font-size: 0.75rem; color: #888; margin: 8px 0;">No audio preview track available</p>`;
 
                 el.innerHTML = `
                     <div>
@@ -191,6 +200,7 @@ async function discoverArtistsByAudioVibe() {
                         </div>
                         <span class="artist-role">${roleType}</span>
                         <div class="artist-bio">${match.bio || "Sonic profile aligned. Ready to lock in a new production track session."}</div>
+                        ${audioPlayer}
                     </div>
                     <button class="connect-btn" onclick="sendConnectRequest(${artistId})">Send connect request</button>
                 `;

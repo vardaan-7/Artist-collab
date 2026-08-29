@@ -163,14 +163,16 @@ async def sync_audio_radar(
                         "artist_name": current_user.artist_name,
                         "role_type": current_user.role_type,
                         "tenant_id": current_user.tenant_id,
-                        "bio": getattr(current_user, "bio", "No profile bio available.") or "No profile bio available."
+                        "bio": getattr(current_user, "bio", "No profile bio available.") or "No profile bio available.",
+                        "sample_track_url": audio_track.file_url
                     }
                 )
             ]
         )
         return {
             "status": "synchronized",
-            "message": f"Sonic vector footprint compiled successfully for '{current_user.artist_name}'!"
+            "message": f"Sonic vector footprint compiled successfully for '{current_user.artist_name}'!",
+            "sample_track_url": audio_track.file_url
         }
     except Exception as e:
         traceback.print_exc()
@@ -245,7 +247,6 @@ def discover_by_audio_similarity(
         for match in search_results:
             payload_data = match.payload or {}
             raw_score = match.score
-            # Normalize to 0-100% integer
             percentage = int(max(0.0, raw_score) * 100)
 
             matches.append({
@@ -256,7 +257,8 @@ def discover_by_audio_similarity(
                 "similarity_score": round(raw_score, 4),
                 "score": round(raw_score, 4),
                 "match_percentage": percentage,
-                "match_percentage_str": f"{percentage}%"
+                "match_percentage_str": f"{percentage}%",
+                "sample_track_url": payload_data.get("sample_track_url")
             })
 
         return {
